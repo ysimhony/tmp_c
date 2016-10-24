@@ -11,11 +11,15 @@ CFLAGS=-I$(INCDIR)
 LIBS=
 
 SOURCES=$(shell find $(SRCDIR) -name *.c)
-OBJECTS=$(SOURCES:%.c=%.o)
+OBJECTS=$(subst ${SRCDIR}, ${OBJDIR}, $(SOURCES:%.c=%.o))
+
+$(warning OBJECTS = ${OBJECTS})
+$(warning SOURCES = ${SOURCES})
 
 $(OBJDIR)/%.o: $(SOURCES)
+	@mkdir -p ${OBJDIR}
 	$(CC) -c -o $@ $< $(CFLAGS)
-	$(CC) -MM $(CFLAGS) $(SRC)/$*.c > $(OBJ)/$*.d
+	$(CC) -MM $(CFLAGS) $(SRCDIR)/$*.c > $(OBJDIR)/$*.d
 
 $(BINDIR)/assembler: $(OBJECTS)
 	gcc -o $@ $^ $(CFLAGS) $(LIBS)
@@ -23,7 +27,7 @@ $(BINDIR)/assembler: $(OBJECTS)
 .PHONY: clean
 
 clean:
-	rm -f $(OBJDIR)/*  core $(INCDIR)/*~ 
+	rm -f $(OBJDIR)/* $(BINDIR)/* core $(INCDIR)/*~ 
 
 
 -include $(OBJS:.o=.d)
