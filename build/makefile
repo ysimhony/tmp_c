@@ -5,7 +5,7 @@ OBJDIR = ../obj
 LIBDIR = ../lib
 
 CC=gcc
-CFLAGS=-I$(INCDIR)
+CFLAGS=-I$(INCDIR) -g -Wall -ansi -pedantic
 
 
 LIBS=

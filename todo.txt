@@ -1,1 +1,7 @@
-1. understand what is A, R, E...
+1. understand what is A, R, E... - DONE
+2. Add makefile - DONE
+3. get the copy of the assembly code - DONE
+4. write the method converting assembler commands into opcodes
+5. Write function that reads a file
+6. implement the first phase
+

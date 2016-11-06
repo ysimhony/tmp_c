@@ -1,4 +1,4 @@
-.entry LOOP
+.entry   LOOP
 .entry LENGTH
 .extern L3
 .extern W
@@ -11,6 +11,6 @@ inc K
 mov LOOP[1-13],r3
 bne L3
 END: stop
-STR: .string ?abcdef?
+STR: .string "abcdef"
 LENGTH: .data 6,-9,15
 K: .data 22
