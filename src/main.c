@@ -4,32 +4,39 @@
 #include "stdlib.h"
 #include "string.h"
 #include "sys/types.h"
-
+#include "ctype.h"
 
 #define NUM_OF_BYTES  (100)
 typedef enum { FALSE, TRUE } bool;
 typedef enum {LABEL_NONE, LABEL_DATA, LABEL_CODE} label_type;
 typedef enum {INST_NONE, INST_DATA, INST_STRING, INST_ENTRY, INST_EXTERN} instruction_type;
 
+#define ERROR(msg, cmd_ptr) \
+if (1) { \
+	printf("%s\n", msg); \
+	printf("Assembly line: %s\n", cmd_ptr); \
+	printf("At file %s: %d", __FILE__, __LINE__); \
+	exit(EXIT_FAILURE); \
+};
 
-char *opcodes = 
+const char *opcodes[] =
 {  
-"mov"
-"cmp"
-"add"
-"sub"
-"not"
-"clr"
-"lea"
-"inc"
-"dec"
-"jmp"
-"bne"
-"red"
-"prn"
-"jsr"
-"rts"
-"stop"
+   "mov", /* 0 */
+"cmp", /* 1 */
+"add", /* 2 */
+"sub", /* 3 */
+"not", /* 4 */
+"clr", /* 5 */
+"lea", /* 6 */
+"inc", /* 7 */
+"dec", /* 8 */
+"jmp", /* 9 */
+"bne", /* 10 */
+"red", /* 11 */
+"prn", /* 12 */
+"jsr", /* 13 */
+"rts", /* 14 */
+"stop", /* 15 */
 };
 
 
@@ -61,10 +68,8 @@ bool is_instruction(char *pch)
 {
    bool result = FALSE;
    
-   if (pch[0] == '.')
-   {
+   if (pch[0] == '.') {
       result = TRUE;
-      
    }
    
    return result;   
@@ -155,7 +160,7 @@ void perform_7(char *pch, instruction_type i_type)
    {
       if (pch[0] != '"')
       {
-         printf("Invalid command...n"); /* Maybe add the line of the failure in the .as file */
+         ERROR("Invalid command", pch);
          exit(EXIT_FAILURE);         
       }  
 
@@ -186,7 +191,7 @@ void perform_7(char *pch, instruction_type i_type)
       {
          if (pch[str_itr] != ' ')
          {
-            printf("Invalid command, non-space charchter after string command...n"); /* Maybe add the line of the failure in the .as file */   
+            ERROR("Invalid command, non-space charchter after string command", pch);
             exit(EXIT_FAILURE);         
          }      
       }      
@@ -197,6 +202,476 @@ void perform_7(char *pch, instruction_type i_type)
    }   
 }
 
+bool is_register_name(char *pch)
+{
+   bool result = FALSE;
+   
+   if (pch[0] != 'r')
+   {
+      result = FALSE;
+   }
+   else if (strlen(pch) > 2)
+   {
+      result = FALSE;      
+   }
+   else if ((pch[1] - '0') > 7 ||
+            (pch[1] - '0') < 0)
+   {
+      result = FALSE;      
+   }
+   
+   return result;   
+}
+
+/*
+ * This function returns TRUE if the string starting at pch is in dynamic addressing format. Otherwise, FALSE.
+ * start bit - is the start bit to extract the value from the first operand
+ * end_bit - is the end bit to extract the value from the first operand
+ */
+bool is_dynamic_addressing(char *pch, int *start_bit, int *end_bit)
+{
+   /*bool result = TRUE;*/
+   char *p1, *p2;
+   
+   p1 = pch;
+   
+   /* Find the open bracket */
+   while (*p1++ != '[') {}
+
+   if (*p1 == '\0') {
+	   return FALSE;
+   }
+
+   p1++;
+
+   p2 = p1;
+
+   /* Find the next comma */
+   while (*p2++ != ',') {}
+
+   if (*p2 == '\0') {
+	   return FALSE;
+   }
+
+   *p2 = '\0';
+
+   /* Extract the start bit of the indirect addressing */
+   *start_bit = atoi(p1);
+
+   *p2 = ',';
+
+   p2++;
+
+   p1 = p2;
+
+   /* Find the closing bracket */
+   while (*p2++ != ']') {}
+
+   if (*p2 == '\0') {
+	   return FALSE;
+   }
+
+   *p2 = '\0';
+
+   /* Extract the end bit of the indirect addressing */
+   *end_bit = atoi(p1);
+
+   *p2 = ']';
+
+   p2++;
+
+   if (*p2 != ',') {
+	   return FALSE;
+   }
+
+   return TRUE;
+}
+
+/*
+ * pch - points to the start of the two operands
+ * opcode - is the opcode value of the action sentence
+ */
+void parse_two_operands_instruction(char *pch, int opcode) {
+   char *p1, *p2;
+   
+   /* command fields */
+   /* TODO - we might use macros to set and get the fields */
+   /*int era; TODO - need to implement the era logic 
+    basically, era is relevant only for addresses 
+   if the address is declared locally, era = '10'
+   if the address is declared externally, era = '01'
+   otherwisie, era = '00' */
+   int dest_addr;
+   int src_addr;
+   int group;
+
+
+   /* The increment of the IC */
+   /* In first iteration we only check for the validity of the operands
+    * and their addressing type */
+   int L = 0;
+
+   group = 2;
+
+   p1 = pch;
+
+   if (*p1 == '#') {
+	   /* This branch for instant addressing */
+	   src_addr = 0;
+
+	   p1++;
+	   p2 = p1;
+	   while (*p2 != '\0') {
+		   if (*p2 == ',') {
+			   break;
+		   }
+
+		   p2++;
+	   }
+
+	   if (p2 == p1) {
+		   ERROR("Invalid source operand", pch);
+	   }
+
+	   if (*p2 != ',') {
+		   ERROR("Invalid source operand", pch);
+	   }
+
+	   if (*p2 != ',') {
+		   ERROR("Invalid source operand", pch);
+	   }
+
+	   /* if atoi fail - issue error */
+   }
+   else if (*p1 == 'r') {
+	   /* direct register addressing */
+	   src_addr = 3;
+
+	   p1++;
+	   p2 = p1;
+	   while (*p2 != '\0') {
+		   if (*p2 == ',') {
+			   break;
+		   }
+		   else {
+			   if (!(*p2 >= '0' && *p2 <= '9')) {
+				   ERROR("Invalid source operand", pch);
+			   }
+		   }
+
+		   p2++;
+	   }
+
+	   if (p2 == p1) {
+		   /* issue error - need to exclude the case where the label is r */
+		   ERROR("Invalid source operand", pch);
+	   }
+
+	   if (*p2 != ',') {
+		   /* issue error */
+		   ERROR("Invalid source operand", pch);
+	   }
+   }
+   else { /* either direct addressing or dynamic addressing */
+
+	   p1++;
+	   p2 = p1;
+	   while (*p2 != '\0') {
+		   if (!(*p2 == '[' || *p2 == ',')) {
+			   break;
+		   }
+
+		   p2++;
+	   }
+
+	   if (*p2 == '\0') {
+		   /* issue error */
+		   ERROR("Invalid source operand", pch);
+	   }
+
+	   if (*p2 == ',') {
+		   /* direct addressing */
+		   src_addr = 1;
+	   }
+	   else {
+		   /* dynamic addressing */
+		   src_addr = 2;
+
+		   p2++;
+
+		   p1 = p2;
+
+		   while (*p2 != '\0') {
+			   if (*p2 == '-') {
+				   break;
+			   }
+			   else {
+				   if (!(*p2 >= '0' && *p2 <= '9')) {
+					   /* issue error */
+					   ERROR("Invalid source operand", p1);
+				   }
+			   }
+
+			   p2++;
+		   }
+
+		   if (*p2 == '\0') {
+			   /* issue error */
+			   ERROR("Invalid source operand", pch);
+		   }
+
+		   *p2 = '\0';
+
+		   if (atoi(p1) > 14) {
+			   /* issue error - the valid range is 0-14 */
+			   ERROR("Invalid source operand", pch);
+		   }
+
+		   *p2 = ',';
+
+		   p2++;
+
+		   p1 = p2;
+
+		   while (*p2 != '\0') {
+			   if (*p2 == ']') {
+				   break;
+			   }
+			   else {
+				   if (!(*p2 >= '0' && *p2 <= '9')) {
+					   /* issue error */
+					   ERROR("Invalid source operand", pch);
+				   }
+			   }
+
+			   p2++;
+		   }
+
+		   if (*p2 == '\0') {
+			   /* issue error */
+			   ERROR("Invalid source operand", pch);
+		   }
+
+		   *p2 = '\0';
+
+		   if (atoi(p1) > 14) {
+			   /* issue error - the valid range is 0-14 */
+			   ERROR("Invalid source operand", pch);
+		   }
+
+		   *p2 = ']';
+
+		   p2++;
+
+		   if (*p2 != ',') {
+			   /* issue error */
+			   ERROR("Invalid source operand", pch);
+		   }
+	   }
+   }
+   
+   /* Up until now p2 should point to the comma between the operands */
+
+
+   p2++;
+   p1 = p2;
+
+   if (*p1 == '#') {
+	   /* This branch for instant addressing */
+	   dest_addr = 0;
+
+	   p1++;
+	   p2 = p1;
+	   while (*p2 != '\0') {
+
+		   p2++;
+	   }
+
+	   if (p2 == p1) {
+		   ERROR("Invalid source operand", pch);
+	   }
+
+	   /* if atoi fail - issue error */
+   }
+   else if (*p1 == 'r') {
+	   /* direct register addressing */
+	   src_addr = 3;
+
+	   p1++;
+	   p2 = p1;
+	   while (*p2 != '\0') {
+		   if (*p2 >= '0' && *p2 <= '9') {
+			   ERROR("Invalid source operand", pch);
+		   }
+
+		   p2++;
+	   }
+
+	   if (p2 == p1) {
+		   /* issue error - need to exclude the case where the label is r */
+		   ERROR("Invalid source operand", pch);
+	   }
+   }
+   else { /* either direct addressing or dynamic addressing */
+
+	   p1++;
+	   p2 = p1;
+	   while (*p2 != '\0') {
+		   if (*p2 == '[') {
+			   break;
+		   }
+
+		   p2++;
+	   }
+
+	   if (*p2 == '\0') {
+		   /* direct addressing */
+		   src_addr = 1;
+	   }
+	   else {
+		   /* dynamic addressing */
+		   src_addr = 2;
+
+		   p2++;
+
+		   p1 = p2;
+
+		   while (*p2 != '\0') {
+			   if (*p2 == '-') {
+				   break;
+			   }
+			   else {
+				   if (!(*p2 >= '0' && *p2 <= '9')) {
+					   /* issue error */
+					   ERROR("Invalid source operand", p1);
+				   }
+			   }
+
+			   p2++;
+		   }
+
+		   if (*p2 == '\0') {
+			   /* issue error */
+			   ERROR("Invalid source operand", pch);
+		   }
+
+		   *p2 = '\0';
+
+		   if (atoi(p1) > 14) {
+			   /* issue error - the valid range is 0-14 */
+			   ERROR("Invalid source operand", pch);
+		   }
+
+		   *p2 = '-';
+
+		   p2++;
+
+		   p1 = p2;
+
+		   while (*p2 != '\0') {
+			   if (*p2 == ']') {
+				   break;
+			   }
+			   else {
+				   if (!(*p2 >= '0' && *p2 <= '9')) {
+					   /* issue error */
+					   ERROR("Invalid source operand", pch);
+				   }
+			   }
+
+			   p2++;
+		   }
+
+		   if (atoi(p1) > 14) {
+			   /* issue error - the valid range is 0-14 */
+			   ERROR("Invalid source operand", pch);
+		   }
+
+		   *p2 = ']';
+
+		   p2++;
+
+	   }
+   }
+
+
+
+
+   printf("Parsed command line successfully\n");
+
+   if (3 == src_addr && 3 == dest_addr) {
+	   L = 2;
+   }
+   else {
+	   L = 3;
+   }
+
+   IC += L;   
+}
+
+void parse_one_operand_instruction(char *pch, int opcode)
+{
+}
+
+void parse_non_operand_instruction(char *pch, int opcode)
+{
+}
+
+void parse_action_instruction(char *pch) 
+{
+   int itr;
+   bool found;
+   
+   itr = 0;
+   found = FALSE;
+   
+   while (itr <  16) {
+      if ((strlen(opcodes[itr]) == strlen(pch)) &&
+          (0 == strncmp(opcodes[itr], pch, strlen(opcodes[itr]))))
+      {
+         found = TRUE;         
+         break;         
+      }
+      
+      itr++;      
+   }
+   
+   if (FALSE == found)
+   {
+      ERROR("Invalid instruction", pch);
+   }
+
+   pch = strtok(NULL, " ");
+
+   switch (itr){
+      case 0: /* mov */
+      case 1: /* cmp */
+      case 2: /* add */
+      case 3: /* sub */
+      case 6: /* lea */
+         parse_two_operands_instruction(pch, itr);         
+         break;         
+      case 4: /* not */
+      case 5: /* clr */
+      case 7: /* inc */
+      case 8: /* dec */
+      case 9: /* jmp */ 
+      case 10: /* bne */
+      case 11: /* red */
+      case 12: /* prn */
+      case 13: /* jsr */
+         parse_one_operand_instruction(pch, itr);         
+         break;         
+      case 14: /* rts */
+      case 15: /* stop */
+         parse_non_operand_instruction(pch, itr);         
+         break;         
+   }
+   
+   
+}
+
+/* This function return TRUE if the string is LABEL. Otherwise, FALSE */
 bool label_check(char* pch) 
 {
    bool result = TRUE;
@@ -277,6 +752,7 @@ int main()
       
       /* TODO - need to skip empty lines */      
 
+      printf("parsing line: %s\n", line);
       is_label = FALSE;
        
       /* Get first word */
@@ -289,8 +765,7 @@ int main()
          is_label = TRUE;          
       }
 
-      if (is_label) 
-      {          
+      if (is_label) {
          /* Get second word */
          pch = strtok (NULL, " ");
           
@@ -302,12 +777,11 @@ int main()
          }
       }
        
-      if (is_instruction(pch)) /* pch holds the string that is suspect to be the instruction type */
-      {
+      if (is_instruction(pch)) {/* pch holds the string that is suspect to be the instruction type */
+
          i_type = get_instruction_type(pch);
 
-         if (i_type == INST_DATA || i_type == INST_STRING) 
-         {             
+         if (i_type == INST_DATA || i_type == INST_STRING) {
             if (is_label == TRUE) 
             {
                 
@@ -317,29 +791,24 @@ int main()
             /* TODO - need to split into two cases of DATA and STRING labels */
             perform_7(strtok (NULL, " "), i_type);             
          }                 
-         else if (i_type == INST_ENTRY) 
-         {
+         else if (i_type == INST_ENTRY) {
             
          }
-         else if (i_type == INST_EXTERN)
-         {
+         else if (i_type == INST_EXTERN) {
             /* perform_9();            */
          }          
-         else 
-         {
+         else {
             /* TODO - need to add error here... */
          }          
       }    
+      else {/* action instruction */
 
-      else /* action command */
-      {
-         if (is_label == TRUE) 
-         {
+         if (is_label == TRUE) {
             
             store_label(first_word, LABEL_CODE);                
          }
          
-         /*  parse_action_command();     */
+         parse_action_instruction(pch);
       }
    }
    
