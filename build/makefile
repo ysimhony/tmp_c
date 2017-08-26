@@ -5,7 +5,7 @@ OBJDIR = ../obj
 LIBDIR = ../lib
 
 CC=gcc
-CFLAGS=-I$(INCDIR) -g -Wall -ansi -pedantic
+CFLAGS=-I$(INCDIR) -g -Wall -std=c99 -pedantic
 
 
 LIBS=
@@ -13,8 +13,8 @@ LIBS=
 SOURCES=$(shell find $(SRCDIR) -name *.c)
 OBJECTS=$(subst ${SRCDIR}, ${OBJDIR}, $(SOURCES:%.c=%.o))
 
-$(warning OBJECTS = ${OBJECTS})
-$(warning SOURCES = ${SOURCES})
+#$(warning OBJECTS = ${OBJECTS})
+#$(warning SOURCES = ${SOURCES})
 
 $(OBJDIR)/%.o: $(SOURCES)
 	@mkdir -p ${OBJDIR}
@@ -29,5 +29,6 @@ $(BINDIR)/assembler: $(OBJECTS)
 clean:
 	rm -f $(OBJDIR)/* $(BINDIR)/* core $(INCDIR)/*~ 
 
+all: $(BINDIR)/assembler
 
 -include $(OBJS:.o=.d)
