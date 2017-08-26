@@ -11,12 +11,21 @@ typedef enum { FALSE, TRUE } bool;
 typedef enum {LABEL_NONE, LABEL_DATA, LABEL_CODE} label_type;
 typedef enum {INST_NONE, INST_DATA, INST_STRING, INST_ENTRY, INST_EXTERN} instruction_type;
 
+#define DEBUG 1
+
 #define ERROR(msg, cmd_ptr) \
 if (1) { \
+	printf("\n"); \
 	printf("%s\n", msg); \
 	printf("Assembly line: %s\n", cmd_ptr); \
 	printf("At file %s: %d", __FILE__, __LINE__); \
 	exit(EXIT_FAILURE); \
+};
+
+#define PRINT_DEBUG(...) \
+if (DEBUG==1) {\
+	printf(__VA_ARGS__); \
+	printf("\n"); \
 };
 
 const char *opcodes[] =
@@ -122,7 +131,12 @@ void store_label(char *label, label_type type)
    labels_map.labels_table[table_itr].label = malloc(strlen(label) * sizeof(char));
    memcpy(labels_map.labels_table[table_itr].label, label, strlen(label) * sizeof(char));
    
-   labels_map.labels_table[table_itr].value = DC;
+   if (type == LABEL_DATA) {
+	   labels_map.labels_table[table_itr].value = DC;
+   }
+   else if (type == LABEL_CODE) {
+	   labels_map.labels_table[table_itr].value = IC;
+   }
    labels_map.labels_table[table_itr].type = type;
 
    labels_map.itr = table_itr;
@@ -135,64 +149,52 @@ void perform_7(char *pch, instruction_type i_type)
    char *curr_word;
    int str_itr;
    
-   if (INST_DATA == i_type)
-   {   
+   if (INST_DATA == i_type) {
       curr_word = strtok(pch, " ");
 
-      while (curr_word != NULL)
-      {
-         if (curr_word[0] == '+' || curr_word[0] == '-')
-         {
-            /* TODO - how can check that this is a valid number? */
-            /* Does atoi() function also recognize the +/- signs? */
-            data_arr[DC++] = atoi(&curr_word[1]);         
-         }
-         else
-         {
-            data_arr[DC++] = atoi(&curr_word[0]);         
-         }
-      
-
-         curr_word = strtok(pch, " ");
-      }
+//      while (curr_word != NULL) {
+//         if (curr_word[0] == '+' || curr_word[0] == '-') {
+//            /* TODO - how can check that this is a valid number? */
+//            /* Does atoi() function also recognize the +/- signs? */
+//            data_arr[DC++] = atoi(&curr_word[1]);
+//         }
+//         else {
+//            data_arr[DC++] = atoi(&curr_word[0]);
+//         }
+//
+//
+//         curr_word = strtok(pch, " ");
+//      }
    }
-   else if (INST_STRING == i_type)
-   {
-      if (pch[0] != '"')
-      {
+   else if (INST_STRING == i_type){
+
+	  if (pch[0] != '"') {
          ERROR("Invalid command", pch);
-         exit(EXIT_FAILURE);         
       }  
 
-      str_itr = 0;
+      str_itr = 1;
       
-      while (pch[str_itr] != '\0')
-      {         
-         if (pch[str_itr] != '"')
-         {
+      while (pch[str_itr] != '\0') {
+         if (pch[str_itr] != '"') {
             data_arr[DC++] = pch[str_itr++];
          }      
-         else
-         {
+         else {
             break;          
          }       
       }
 
       if (pch[str_itr] == '\0')
       {
-         printf("Invalid command, missing parentheses at the end of string...n"); /* Maybe add the line of the failure in the .as file */   
-         exit(EXIT_FAILURE);         
+    	 ERROR("Invalid command, missing parentheses at the end of string...n", pch); /* Maybe add the line of the failure in the .as file */
       }      
       
       str_itr++;
       
-      /* Check trailing charachters are only blanking spaces */
+      /* Check trailing characters are only blanking spaces */
       while (pch[str_itr] != '\0')
       {
-         if (pch[str_itr] != ' ')
-         {
-            ERROR("Invalid command, non-space charchter after string command", pch);
-            exit(EXIT_FAILURE);         
+         if (pch[str_itr] != ' ') {
+            ERROR("Invalid command, non-space character after string command", pch);
          }      
       }      
    }
@@ -377,7 +379,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 	   p1++;
 	   p2 = p1;
 	   while (*p2 != '\0') {
-		   if (!(*p2 == '[' || *p2 == ',')) {
+		   if ((*p2 == '[' || *p2 == ',')) {
 			   break;
 		   }
 
@@ -408,6 +410,8 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 			   else {
 				   if (!(*p2 >= '0' && *p2 <= '9')) {
 					   /* issue error */
+					   print_label_map();
+
 					   ERROR("Invalid source operand", p1);
 				   }
 			   }
@@ -488,7 +492,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 	   }
 
 	   if (p2 == p1) {
-		   ERROR("Invalid source operand", pch);
+		   ERROR("Invalid destination operand", pch);
 	   }
 
 	   /* if atoi fail - issue error */
@@ -500,8 +504,8 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 	   p1++;
 	   p2 = p1;
 	   while (*p2 != '\0') {
-		   if (*p2 >= '0' && *p2 <= '9') {
-			   ERROR("Invalid source operand", pch);
+		   if (!(*p2 >= '0' && *p2 <= '9')) {
+			   ERROR("Invalid destination operand", pch);
 		   }
 
 		   p2++;
@@ -509,7 +513,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 
 	   if (p2 == p1) {
 		   /* issue error - need to exclude the case where the label is r */
-		   ERROR("Invalid source operand", pch);
+		   ERROR("Invalid destination operand", pch);
 	   }
    }
    else { /* either direct addressing or dynamic addressing */
@@ -543,7 +547,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 			   else {
 				   if (!(*p2 >= '0' && *p2 <= '9')) {
 					   /* issue error */
-					   ERROR("Invalid source operand", p1);
+					   ERROR("Invalid destination operand", p1);
 				   }
 			   }
 
@@ -552,14 +556,14 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 
 		   if (*p2 == '\0') {
 			   /* issue error */
-			   ERROR("Invalid source operand", pch);
+			   ERROR("Invalid destination operand", pch);
 		   }
 
 		   *p2 = '\0';
 
 		   if (atoi(p1) > 14) {
 			   /* issue error - the valid range is 0-14 */
-			   ERROR("Invalid source operand", pch);
+			   ERROR("Invalid destination operand", pch);
 		   }
 
 		   *p2 = '-';
@@ -575,7 +579,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 			   else {
 				   if (!(*p2 >= '0' && *p2 <= '9')) {
 					   /* issue error */
-					   ERROR("Invalid source operand", pch);
+					   ERROR("Invalid destination operand", pch);
 				   }
 			   }
 
@@ -584,7 +588,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 
 		   if (atoi(p1) > 14) {
 			   /* issue error - the valid range is 0-14 */
-			   ERROR("Invalid source operand", pch);
+			   ERROR("Invalid destination operand", pch);
 		   }
 
 		   *p2 = ']';
@@ -606,7 +610,9 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 	   L = 3;
    }
 
-   IC += L;   
+   IC += L;
+
+   PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
 }
 
 void parse_one_operand_instruction(char *pch, int opcode)
@@ -709,10 +715,41 @@ bool data_or_string_check(char* pch)
    return result;
 }
 
+void print_code_arr() {
 
 
-int main() 
-{
+	/* Array holding the code sec */
+	int code_arr[NUM_OF_BYTES];
+	int IC = 0;
+
+
+}
+
+void print_data_arr() {
+
+/* Array holding the data */
+/*int data_arr[NUM_OF_BYTES];
+int DC = 0;
+*/
+}
+
+void print_label_map() {
+
+	int table_itr = 0;
+
+	struct LABEL *label_cell;
+   while (labels_map.labels_table[table_itr].label != NULL)
+   {
+
+	   label_cell = &labels_map.labels_table[table_itr];
+
+	   printf("%s %d %d\n", label_cell->label, label_cell->value, label_cell->type);
+	   table_itr++;
+   }
+
+}
+
+int main() {
    
 
    FILE * fp;
@@ -749,71 +786,75 @@ int main()
       /* Skip comment line or empty line */
       if ((line[0] == ';') || (line[0] == 0))
          continue;
-      
-      /* TODO - need to skip empty lines */      
 
-      printf("parsing line: %s\n", line);
+      /* TODO - need to skip empty lines */
+
+      PRINT_DEBUG("parsing line: %s\n", line);
       is_label = FALSE;
-       
+
       /* Get first word */
       pch = strtok(line, " ");
       first_word = pch;
-       
+
       /* Mark label flag */
-      if (TRUE == label_check(pch)) 
+      if (TRUE == label_check(pch))
       {
-         is_label = TRUE;          
+         is_label = TRUE;
       }
 
       if (is_label) {
          /* Get second word */
          pch = strtok (NULL, " ");
-          
+
          /* Check validity */
-         if (pch == NULL) 
+         if (pch == NULL)
          {
-             
+
             /* TODO - what shall we do here? */
          }
       }
-       
+
       if (is_instruction(pch)) {/* pch holds the string that is suspect to be the instruction type */
 
          i_type = get_instruction_type(pch);
 
          if (i_type == INST_DATA || i_type == INST_STRING) {
-            if (is_label == TRUE) 
+            if (is_label == TRUE)
             {
-                
-               store_label(first_word, LABEL_DATA);                
+
+               store_label(first_word, LABEL_DATA);
             }
-             
+
             /* TODO - need to split into two cases of DATA and STRING labels */
-            perform_7(strtok (NULL, " "), i_type);             
-         }                 
+            perform_7(strtok (NULL, " "), i_type);
+
+         }
          else if (i_type == INST_ENTRY) {
-            
+
          }
          else if (i_type == INST_EXTERN) {
             /* perform_9();            */
-         }          
+         }
          else {
             /* TODO - need to add error here... */
-         }          
-      }    
+         }
+      }
       else {/* action instruction */
 
          if (is_label == TRUE) {
-            
-            store_label(first_word, LABEL_CODE);                
+
+            store_label(first_word, LABEL_CODE);
          }
-         
+
          parse_action_instruction(pch);
       }
+
+      PRINT_DEBUG("finished parsing line\n");
    }
    
+   //free(line);
    
-
+   print_label_map();
 
    fclose(fp);
    if (line)
