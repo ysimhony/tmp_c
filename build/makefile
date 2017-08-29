@@ -13,14 +13,16 @@ LIBS=
 SOURCES=$(shell find $(SRCDIR) -name *.c)
 OBJECTS=$(subst ${SRCDIR}, ${OBJDIR}, $(SOURCES:%.c=%.o))
 
-#$(warning OBJECTS = ${OBJECTS})
-#$(warning SOURCES = ${SOURCES})
+$(warning OBJECTS = ${OBJECTS})
+$(warning SOURCES = ${SOURCES})
 
-$(OBJDIR)/%.o: $(SOURCES)
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p ${OBJDIR}
 	$(CC) -c -o $@ $< $(CFLAGS)
-	$(CC) -MM $(CFLAGS) $(SRCDIR)/$*.c > $(OBJDIR)/$*.d
-
+	$(CC) -MM $(CFLAGS) $(SRCDIR)/$*.c > $(OBJDIR)/$*.Td
+	sed 's,\($*\)\.o[ :]*,$@ '$(OBJDIR)'/$*.d: ,g' < $(OBJDIR)/$*.Td > $(OBJDIR)/$*.d;
+	rm -fr $(OBJDIR)/*.Td
+	
 $(BINDIR)/assembler: $(OBJECTS)
 	gcc -o $@ $^ $(CFLAGS) $(LIBS)
 
@@ -31,4 +33,4 @@ clean:
 
 all: $(BINDIR)/assembler
 
--include $(OBJS:.o=.d)
+-include $(OBJECTS:.o=.d)
