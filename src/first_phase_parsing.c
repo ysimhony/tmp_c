@@ -47,14 +47,18 @@ void print_label_map() {
 	int table_itr = 0;
 
 	struct LABEL *label_cell;
-   while (labels_map.labels_table[table_itr].label != NULL)
-   {
+	printf("*************************\n");
+	printf("Label Map:\n");
+	printf("*************************\n");
+	printf("%-10s%-10s%-s\n", "Label", "Value", "Type");
+	while (labels_map.labels_table[table_itr].label != NULL)
+	{
 
 	   label_cell = &labels_map.labels_table[table_itr];
 
-	   printf("%s %d %d\n", label_cell->label, label_cell->value, label_cell->type);
+	   printf("%-10s %-10d %d\n", label_cell->label, label_cell->value, label_cell->type);
 	   table_itr++;
-   }
+	}
 
 }
 
@@ -129,27 +133,63 @@ void store_label(char *label, label_type type)
 }
 
 
-void perform_7(char *pch, instruction_type i_type)
-{
+void parse_instruction(char *pch, instruction_type i_type) {
    //char *curr_word;
    int str_itr;
 
    if (INST_DATA == i_type) {
-      //curr_word = strtok(pch, " ");
 
-//      while (curr_word != NULL) {
-//         if (curr_word[0] == '+' || curr_word[0] == '-') {
-//            /* TODO - how can check that this is a valid number? */
-//            /* Does atoi() function also recognize the +/- signs? */
-//            data_arr[DC++] = atoi(&curr_word[1]);
-//         }
-//         else {
-//            data_arr[DC++] = atoi(&curr_word[0]);
-//         }
-//
-//
-//         curr_word = strtok(pch, " ");
-//      }
+	   char *p1;
+	   char *p2;
+	   p1 = p2 = pch;
+
+      while (*p2 != '\0') {
+    	  if (*p2 == ' ' || *p2 == ',') {
+
+    		  char tmp_c;
+
+    		  tmp_c = *p2;
+
+    		  *p2 = '\0';
+
+    		  data_arr[DC++] = atoi(p1);
+
+    		  *p2 = tmp_c;
+
+    		  while (*p2 == ' ') {
+    			  p2++;
+    		  }
+
+    		  if (*p2 != ',') {
+    			  ERROR("Invalid data sentence!!!", pch);
+    		  }
+
+    		  p2++;
+
+    		  while (*p2 == ' ') {
+    			  p2++;
+    		  }
+
+    		  p1 = p2;
+
+    	  }
+    	  else {
+
+    		  if (*p2 == '+' || *p2 == '-') {
+    			  if (p1 != p2) {
+    				  ERROR("Invalid data sentence!!! Misplace sign charachter", pch);
+    			  }
+
+    		  }
+    		  else if (!(*p2 >= '0' && *p2 <= '9')) {
+    			  ERROR("Invalid data sentence!!!", pch);
+    		  }
+
+    		  p2++;
+    	  }
+      }
+
+      data_arr[DC++] = atoi(p1);
    }
    else if (INST_STRING == i_type){
 
@@ -168,20 +208,12 @@ void perform_7(char *pch, instruction_type i_type)
          }
       }
 
-      if (pch[str_itr] == '\0')
-      {
+      if (pch[str_itr] == '\0') {
     	 ERROR("Invalid command, missing parentheses at the end of string...n", pch); /* Maybe add the line of the failure in the .as file */
       }
 
-      str_itr++;
+      data_arr[DC++] = 0;
 
-      /* Check trailing characters are only blanking spaces */
-      while (pch[str_itr] != '\0')
-      {
-         if (pch[str_itr] != ' ') {
-            ERROR("Invalid command, non-space character after string command", pch);
-         }
-      }
    }
    else
    {
@@ -414,7 +446,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 			   ERROR("Invalid source operand", pch);
 		   }
 
-		   *p2 = ',';
+		   //*p2 = ',';
 
 		   p2++;
 
@@ -457,10 +489,35 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 	   }
    }
 
+   /* Up until now p2 should point to the comma between the operands or to NULL */
+
+   if (*p2 == '\0') {
+	   pch = strtok(NULL, " ");
+
+	   if (pch == NULL) {
+		   ERROR("Invalid destination operand", pch);
+	   }
+
+	   if (*pch != ',') {
+		   ERROR("Invalid destination operand", pch);
+	   }
+
+	   p2 = pch;
+   }
+
    /* Up until now p2 should point to the comma between the operands */
-
-
    p2++;
+
+   if (*p2 == '\0') {
+	   pch = strtok(NULL, " ");
+
+	   if (pch == NULL) {
+		   ERROR("Invalid destination operand", pch);
+	   }
+
+	   p2 = pch;
+   }
+
    p1 = p2;
 
    if (*p1 == '#') {
@@ -482,7 +539,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
    }
    else if (*p1 == 'r') {
 	   /* direct register addressing */
-	   src_addr = 3;
+	   dest_addr = 3;
 
 	   p1++;
 	   p2 = p1;
@@ -593,6 +650,13 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 	   L = 3;
    }
 
+   code_arr[IC] =
+   REGISTER_SET(/*reserved*/5, 12, 3) |
+   REGISTER_SET(/*TODO: group*/0, 10, 2) |
+   REGISTER_SET(opcode, 6, 4) |
+   REGISTER_SET(src_addr, 4, 2) |
+   REGISTER_SET(dest_addr, 2, 2) |
+   REGISTER_SET(0, 0, 2);
    IC += L;
 
    PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
@@ -724,8 +788,20 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 		}
 	}
 
+
+	code_arr[IC] =
+		REGISTER_SET(/*reserved*/5, 12, 3) |
+		REGISTER_SET(/*TODO: group*/0, 10, 2) |
+		REGISTER_SET(opcode, 6, 4) |
+		REGISTER_SET(0, 4, 2) |
+		REGISTER_SET(dest_addr, 2, 2) |
+		REGISTER_SET(0, 0, 2);
+
+	IC += L;
+
 	// It's a one operand instruction, we need only two words for the instruction
 	L = 2;
+
 
 	IC += L;
 
@@ -734,9 +810,25 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 
 void parse_non_operand_instruction(char *pch, int opcode) {
 
+	int L = 0;
+
 	if (pch != NULL) {
 	   ERROR("Invalid non operand instruction", pch);
 	}
+
+	code_arr[IC] =
+		REGISTER_SET(/*reserved*/5, 12, 3) |
+		REGISTER_SET(/*TODO: group*/0, 10, 2) |
+		REGISTER_SET(opcode, 6, 4) |
+		REGISTER_SET(0, 4, 2) |
+		REGISTER_SET(0, 2, 2) |
+		REGISTER_SET(0, 0, 2);
+
+	L = 1;
+
+	IC += L;
+
+	PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
 
 }
 
@@ -906,8 +998,7 @@ int first_phase_parsing() {
       first_word = pch;
 
       /* Mark label flag */
-      if (TRUE == label_check(pch))
-      {
+      if (TRUE == label_check(pch)) {
          is_label = TRUE;
       }
 
@@ -928,15 +1019,13 @@ int first_phase_parsing() {
          i_type = get_instruction_type(pch);
 
          if (i_type == INST_DATA || i_type == INST_STRING) {
-            if (is_label == TRUE)
-            {
+            if (is_label == TRUE) {
 
                store_label(first_word, LABEL_DATA);
             }
 
             /* TODO - need to split into two cases of DATA and STRING labels */
-            perform_7(strtok (NULL, " "), i_type);
-
+            parse_instruction(strtok (NULL, " "), i_type);
          }
          else if (i_type == INST_ENTRY) {
 

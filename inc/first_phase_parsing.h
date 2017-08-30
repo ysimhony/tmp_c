@@ -42,6 +42,9 @@ if (DEBUG==1) {\
 	printf("\n"); \
 };
 
+//opcode set/get
+#define REGISTER_SET(val, start, width) ((val & ((1<<width)-1))<<start)
+
 
 struct LABEL
 {
