@@ -570,11 +570,11 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 
 	   if (*p2 == '\0') {
 		   /* direct addressing */
-		   src_addr = 1;
+		   dest_addr = 1;
 	   }
 	   else {
 		   /* dynamic addressing */
-		   src_addr = 2;
+		   dest_addr = 2;
 
 		   p2++;
 
@@ -797,8 +797,6 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 		REGISTER_SET(dest_addr, 2, 2) |
 		REGISTER_SET(0, 0, 2);
 
-	IC += L;
-
 	// It's a one operand instruction, we need only two words for the instruction
 	L = 2;
 
@@ -832,8 +830,7 @@ void parse_non_operand_instruction(char *pch, int opcode) {
 
 }
 
-void parse_action_instruction(char *pch)
-{
+void parse_action_instruction(char *pch){
    int itr;
    bool found;
 
@@ -887,8 +884,7 @@ void parse_action_instruction(char *pch)
 }
 
 /* This function return TRUE if the string is LABEL. Otherwise, FALSE */
-bool label_check(char* pch)
-{
+bool label_check(char* pch){
    bool result = TRUE;
 
    size_t len = strlen(pch);
@@ -924,13 +920,45 @@ bool data_or_string_check(char* pch)
    return result;
 }
 
+void print_word(int word) {
+	int bit_index;
+	char tmp_str[30];
+	int str_itr;
+
+	memset(&tmp_str, 0, sizeof(tmp_str));
+
+
+	for (bit_index=14, str_itr=0;bit_index>=0;bit_index--) {
+
+		if (bit_index == 11 ||
+			bit_index == 9 ||
+			bit_index == 5 ||
+			bit_index == 3 ||
+			bit_index == 1) {
+			tmp_str[str_itr++] = '-';
+		}
+		if ((1<<bit_index) & word) {
+			tmp_str[str_itr++] = '1';
+		}
+		else {
+			tmp_str[str_itr++] = '0';
+		}
+
+
+	}
+
+	printf("%s\n", tmp_str);
+}
 void print_code_arr() {
 
 
 	/* Array holding the code sec */
-	int code_arr[NUM_OF_BYTES];
-	int IC = 0;
+	int ic;
 
+	for (ic=0;ic<IC;ic++) {
+		printf("%-3d: ", ic);
+		print_word(code_arr[ic]);
+	}
 
 }
 
@@ -1053,7 +1081,7 @@ int first_phase_parsing() {
    //free(line);
 
    print_label_map();
-
+   print_code_arr();
    fclose(fp);
    if (line)
       free(line);
