@@ -7,16 +7,113 @@
 
 #include "second_phase_parsing.h"
 
-int second_phase_parsing() {
+static void parse_two_operands_instruction(char *pch, int opcode);
+static void parse_one_operand_instruction(char *pch, int opcode);
+static void parse_non_operand_instruction(char *pch, int opcode);
+
+static void parse_two_operands_instruction(char *pch, int opcode) {
+
+	int dest_addr;
+	int src_addr;
+
+	dest_addr = REGISTER_GET(code_arr[IC], DST_ADDR_FIELD_OFFSET, DST_ADDR_FIELD_WIDTH);
+	src_addr = REGISTER_GET(code_arr[IC], SRC_ADDR_FIELD_OFFSET, SRC_ADDR_FIELD_WIDTH);
+
+
+	if (3 == src_addr && 3 == dest_addr) {
+	   L = 2;
+	}
+	else {
+	   L = 3;
+	}
+
+	IC += L;
+
+	PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
+
+
+}
+
+static void parse_one_operand_instruction(char *pch, int opcode) {
+	char *p1;
+	char *p2;
+	int operand_val;
+
+	p1 = p2 = pch;
+
+	switch (REGISTER_GET(code_arr[IC], DST_ADDR_FIELD_OFFSET, DST_ADDR_FIELD_WIDTH)) {
+		case 0: {
+			p1++;
+			operand_val = atoi(p1);
+		}
+		break;
+
+		case 1: {
+			//operand_val = find_label(p1, LABEL_DATA);
+		}
+		break;
+	}
+
+	code_arr[IC+1] = operand_val;
+	L = 2;
+	IC += L;
+}
+
+static void parse_non_operand_instruction(char *pch, int opcode) {
+
+	L = 1;
+
+	IC += L;
+
+	PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
+
+}
+
+
+static void parse_action_instruction(char *pch){
+   int itr;
+
+   itr = 0;
+
+   pch = strtok(NULL, " ");
+
+   int opcode = REGISTER_GET(code_arr[IC], 6, 4);
+   switch (opcode) {
+      case 0: /* mov */
+      case 1: /* cmp */
+      case 2: /* add */
+      case 3: /* sub */
+      case 6: /* lea */
+         parse_two_operands_instruction(pch, itr);
+         break;
+      case 4: /* not */
+      case 5: /* clr */
+      case 7: /* inc */
+      case 8: /* dec */
+      case 9: /* jmp */
+      case 10: /* bne */
+      case 11: /* red */
+      case 12: /* prn */
+      case 13: /* jsr */
+         parse_one_operand_instruction(pch, itr);
+         break;
+      case 14: /* rts */
+      case 15: /* stop */
+         parse_non_operand_instruction(pch, itr);
+         break;
+   }
+
+
+}
+
+void second_phase_parsing() {
 
 	FILE * fp;
 	char * line = NULL;
 	size_t len = 0;
 	ssize_t read;
 	char * pch;
-	char * first_word;
 
-	bool is_label;
 	instruction_type i_type;
 
 	errno = 0;
@@ -30,6 +127,9 @@ int second_phase_parsing() {
 	   exit(EXIT_FAILURE);
 	}
 
+	IC = 0;
+	DC = 0;
+
 	/* Read line */
 	while ((read = getline(&line, &len, fp)) != -1) {
 	  /* Remove the traing CR/LF */
@@ -41,11 +141,9 @@ int second_phase_parsing() {
 
 	  /* TODO - need to skip empty lines */
 	  PRINT_DEBUG("parsing line: %s\n", line);
-	  is_label = FALSE;
 
 	  /* Get first word */
 	  pch = strtok(line, " ");
-	  first_word = pch;
 
 	  /* Mark label flag */
 	  if (TRUE == label_check(pch)) {
@@ -83,15 +181,8 @@ int second_phase_parsing() {
 	  PRINT_DEBUG("finished parsing line\n");
 	}
 
-	//free(line);
-
-	print_label_map();
-
 	fclose(fp);
 	if (line)
 	  free(line);
-	exit(EXIT_SUCCESS);
-
-
 
 }

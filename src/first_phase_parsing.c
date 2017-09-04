@@ -32,105 +32,12 @@ const char *opcodes[] =
 };
 
 
-/* Array holding the code sec */
-int code_arr[NUM_OF_BYTES];
-int IC = 0;
-
-/* Array holding the data */
-int data_arr[NUM_OF_BYTES];
-int DC = 0;
 
 
+static void parse_two_operands_instruction(char *pch, int opcode);
+static void parse_one_operand_instruction(char *pch, int opcode);
+static void parse_non_operand_instruction(char *pch, int opcode);
 
-void print_label_map() {
-
-	int table_itr = 0;
-
-	struct LABEL *label_cell;
-	printf("*************************\n");
-	printf("Label Map:\n");
-	printf("*************************\n");
-	printf("%-10s%-10s%-s\n", "Label", "Value", "Type");
-	while (labels_map.labels_table[table_itr].label != NULL)
-	{
-
-	   label_cell = &labels_map.labels_table[table_itr];
-
-	   printf("%-10s %-10d %d\n", label_cell->label, label_cell->value, label_cell->type);
-	   table_itr++;
-	}
-
-}
-
-bool is_instruction(char *pch)
-{
-   bool result = FALSE;
-
-   if (pch[0] == '.') {
-      result = TRUE;
-   }
-
-   return result;
-}
-
-
-instruction_type get_instruction_type(char *pch)
-{
-   instruction_type result = INST_NONE;
-
-   if (0 == strcmp(&pch[1], "data"))
-   {
-      result = INST_DATA;
-   }
-   else if (0 == strcmp(&pch[1], "string"))
-   {
-      result = INST_STRING;
-   }
-   else if (0 == strcmp(&pch[1], "entry"))
-   {
-      result = INST_ENTRY;
-   }
-   else if (0 == strcmp(&pch[1], "extern"))
-   {
-      result = INST_EXTERN;
-   }
-
-
-   return result;
-
-}
-
-void store_label(char *label, label_type type)
-{
-   int table_itr = 0;
-
-   while (labels_map.labels_table[table_itr].label != NULL)
-   {
-      if (0 == strncmp(labels_map.labels_table[table_itr].label, label, strlen(label)))
-      {
-         printf("Label(%s) already exist\n", label);
-         exit(EXIT_FAILURE);
-      }
-
-      table_itr++;
-   }
-
-
-
-   labels_map.labels_table[table_itr].label = malloc(strlen(label) * sizeof(char));
-   memcpy(labels_map.labels_table[table_itr].label, label, strlen(label) * sizeof(char));
-
-   if (type == LABEL_DATA) {
-	   labels_map.labels_table[table_itr].value = DC;
-   }
-   else if (type == LABEL_CODE) {
-	   labels_map.labels_table[table_itr].value = IC;
-   }
-   labels_map.labels_table[table_itr].type = type;
-
-   labels_map.itr = table_itr;
-
-}
 
 
 void parse_instruction(char *pch, instruction_type i_type) {
@@ -320,15 +227,12 @@ void parse_two_operands_instruction(char *pch, int opcode) {
    otherwisie, era = '00' */
    int dest_addr;
    int src_addr;
-   int group;
+   int group = 2;
 
 
    /* The increment of the IC */
    /* In first iteration we only check for the validity of the operands
     * and their addressing type */
-   int L = 0;
-
-   group = 2;
 
    p1 = pch;
 
@@ -652,7 +556,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 
    code_arr[IC] =
    REGISTER_SET(/*reserved*/5, 12, 3) |
-   REGISTER_SET(/*TODO: group*/0, 10, 2) |
+   REGISTER_SET(group, 10, 2) |
    REGISTER_SET(opcode, 6, 4) |
    REGISTER_SET(src_addr, 4, 2) |
    REGISTER_SET(dest_addr, 2, 2) |
@@ -667,7 +571,7 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 	char *p1, *p2;
 
 	int dest_addr;
-	int L = 0;
+	int group = 1;
 
 	p1 = pch;
 
@@ -791,7 +695,7 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 
 	code_arr[IC] =
 		REGISTER_SET(/*reserved*/5, 12, 3) |
-		REGISTER_SET(/*TODO: group*/0, 10, 2) |
+		REGISTER_SET(group, 10, 2) |
 		REGISTER_SET(opcode, 6, 4) |
 		REGISTER_SET(0, 4, 2) |
 		REGISTER_SET(dest_addr, 2, 2) |
@@ -808,7 +712,7 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 
 void parse_non_operand_instruction(char *pch, int opcode) {
 
-	int L = 0;
+	int group = 0;
 
 	if (pch != NULL) {
 	   ERROR("Invalid non operand instruction", pch);
@@ -816,7 +720,7 @@ void parse_non_operand_instruction(char *pch, int opcode) {
 
 	code_arr[IC] =
 		REGISTER_SET(/*reserved*/5, 12, 3) |
-		REGISTER_SET(/*TODO: group*/0, 10, 2) |
+		REGISTER_SET(group, 10, 2) |
 		REGISTER_SET(opcode, 6, 4) |
 		REGISTER_SET(0, 4, 2) |
 		REGISTER_SET(0, 2, 2) |
@@ -830,7 +734,7 @@ void parse_non_operand_instruction(char *pch, int opcode) {
 
 }
 
-void parse_action_instruction(char *pch){
+static void parse_action_instruction(char *pch){
    int itr;
    bool found;
 
@@ -883,22 +787,6 @@ void parse_action_instruction(char *pch){
 
 }
 
-/* This function return TRUE if the string is LABEL. Otherwise, FALSE */
-bool label_check(char* pch){
-   bool result = TRUE;
-
-   size_t len = strlen(pch);
-
-   if (pch[len-1] != ':')
-   {
-      result = FALSE;
-   }
-
-   return result;
-
-   /* TODO - add all the condition for valid label */
-
-}
 
 bool data_or_string_check(char* pch)
 {
@@ -920,47 +808,6 @@ bool data_or_string_check(char* pch)
    return result;
 }
 
-void print_word(int word) {
-	int bit_index;
-	char tmp_str[30];
-	int str_itr;
-
-	memset(&tmp_str, 0, sizeof(tmp_str));
-
-
-	for (bit_index=14, str_itr=0;bit_index>=0;bit_index--) {
-
-		if (bit_index == 11 ||
-			bit_index == 9 ||
-			bit_index == 5 ||
-			bit_index == 3 ||
-			bit_index == 1) {
-			tmp_str[str_itr++] = '-';
-		}
-		if ((1<<bit_index) & word) {
-			tmp_str[str_itr++] = '1';
-		}
-		else {
-			tmp_str[str_itr++] = '0';
-		}
-
-
-	}
-
-	printf("%s\n", tmp_str);
-}
-void print_code_arr() {
-
-
-	/* Array holding the code sec */
-	int ic;
-
-	for (ic=0;ic<IC;ic++) {
-		printf("%-3d: ", ic);
-		print_word(code_arr[ic]);
-	}
-
-}
 
 void print_data_arr() {
 
@@ -971,7 +818,7 @@ int DC = 0;
 }
 
 
-int first_phase_parsing() {
+void first_phase_parsing() {
 
 
    FILE * fp;
@@ -984,12 +831,7 @@ int first_phase_parsing() {
    bool is_label;
    instruction_type i_type;
 
-   printf("hellow world!!!\n");
-
-
    memset(&labels_map, 0, sizeof(struct LABELS_MAP));
-
-
 
    errno = 0;
 #ifdef __CYGWIN__
@@ -1002,6 +844,9 @@ int first_phase_parsing() {
 	   exit(EXIT_FAILURE);
    }
 
+
+   IC = 0;
+   DC = 0;
    /* Read line */
    while ((read = getline(&line, &len, fp)) != -1) {
 /*        printf("Retrieved line of length %zu :\n", read); */
@@ -1080,12 +925,11 @@ int first_phase_parsing() {
 
    //free(line);
 
-   print_label_map();
-   print_code_arr();
    fclose(fp);
    if (line)
       free(line);
-   exit(EXIT_SUCCESS);
+
+   //exit(EXIT_SUCCESS);
 
 
 
