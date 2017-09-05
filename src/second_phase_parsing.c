@@ -11,6 +11,8 @@ static void parse_two_operands_instruction(char *pch, int opcode);
 static void parse_one_operand_instruction(char *pch, int opcode);
 static void parse_non_operand_instruction(char *pch, int opcode);
 
+
+
 static void parse_two_operands_instruction(char *pch, int opcode) {
 
 	int dest_addr;
@@ -49,9 +51,36 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 		break;
 
 		case 1: {
-			//operand_val = find_label(p1, LABEL_DATA);
+			int operand_val = get_symbol_value(&external_labels, p1);
+
+			if (-1 != operand_val) {
+				// We found that the symbol exist in the external symbol map
+				operand_val = 1;
+
+				// update the external label map to store the reference to the external symbol
+				// in the current assembly file
+				set_symbol_value(&external_labels, p1, CODE_ARRAY_OFFSET+IC+1);
+			}
+			else {
+				operand_val = get_symbol_value(&data_code_labels, p1);
+				operand_val <<= ERA_FIELD_WIDTH;
+				operand_val = operand_val | REGISTER_SET(2, ERA_FIELD_OFFSET, ERA_FIELD_WIDTH);
+
+				if (-1 != get_symbol_value(&entry_labels, p1)) {
+					set_symbol_value(&entry_labels, p1, CODE_ARRAY_OFFSET+IC);
+				}
+			}
 		}
 		break;
+//		case 2: {
+//			if (is_external_symbol(p1)) {
+//				operand_val = 1;
+//			}
+//			else {
+//				operand_val = find_label(p1, LABEL_DATA);
+//			}
+//		}
+//		break;
 	}
 
 	code_arr[IC+1] = operand_val;
@@ -126,6 +155,8 @@ void second_phase_parsing() {
 	   printf ("  err %d \n", errno);
 	   exit(EXIT_FAILURE);
 	}
+
+	update_labels_by_attr(&data_code_labels, IC, LABEL_DATA);
 
 	IC = 0;
 	DC = 0;

@@ -8,6 +8,17 @@
 
 #include "common.h"
 
+int code_arr[NUM_OF_BYTES] = {0};
+int IC = 0;
+int L = 0;
+
+/* Array holding the data */
+int data_arr[NUM_OF_BYTES] = {0};
+int DC = 0;
+
+LABELS_MAP data_code_labels;
+LABELS_MAP external_labels;
+LABELS_MAP entry_labels;
 
 static void print_word(int word);
 
@@ -29,54 +40,31 @@ bool label_check(char* pch){
 
 }
 
-void store_label(char *label, label_type type){
-   int table_itr = 0;
-
-   while (labels_map.labels_table[table_itr].label != NULL)
-   {
-      if (0 == strncmp(labels_map.labels_table[table_itr].label, label, strlen(label)))
-      {
-         printf("Label(%s) already exist\n", label);
-         exit(EXIT_FAILURE);
-      }
-
-      table_itr++;
-   }
+/*
+ * get_symbol_value
+ * set_symbol_value
+ * store_symbol(symbol, value, attribute)
+ *
+ */
 
 
-
-   labels_map.labels_table[table_itr].label = malloc(strlen(label) * sizeof(char));
-   memcpy(labels_map.labels_table[table_itr].label, label, strlen(label) * sizeof(char));
-
-   if (type == LABEL_DATA) {
-	   labels_map.labels_table[table_itr].value = DC;
-   }
-   else if (type == LABEL_CODE) {
-	   labels_map.labels_table[table_itr].value = IC;
-   }
-   labels_map.labels_table[table_itr].type = type;
-
-   labels_map.itr = table_itr;
-
-}
-
-int find_label(char *label, label_type type){
-   int table_itr = 0;
-   char *tmp_ch = 0;
-
-   while (labels_map.labels_table[table_itr].label != NULL)
-   {
-	  if (labels_map.labels_table[table_itr].type == type) {
-	      if (0 == strncmp(labels_map.labels_table[table_itr].label, label, strlen(label))){
-	    	  return labels_map.labels_table[table_itr].value;
-	      }
-	  }
-
-      table_itr++;
-   }
-
-   ERROR("Label was not found", tmp_ch);
-}
+//int find_label(char *label, label_type type){
+//   int table_itr = 0;
+//   char *tmp_ch = 0;
+//
+//   while (data_code_labels_map.labels_table[table_itr].label != NULL)
+//   {
+//	  if (data_code_labels_map.labels_table[table_itr].type == type) {
+//	      if (0 == strncmp(data_code_labels_map.labels_table[table_itr].label, label, strlen(label))){
+//	    	  return data_code_labels_map.labels_table[table_itr].value;
+//	      }
+//	  }
+//
+//      table_itr++;
+//   }
+//
+//   ERROR("Label was not found", tmp_ch);
+//}
 
 bool is_instruction(char *pch){
    bool result = FALSE;
@@ -113,26 +101,6 @@ instruction_type get_instruction_type(char *pch){
 
 }
 
-
-void print_label_map() {
-
-	int table_itr = 0;
-
-	struct LABEL *label_cell;
-	printf("*************************\n");
-	printf("Label Map:\n");
-	printf("*************************\n");
-	printf("%-10s%-10s%-s\n", "Label", "Value", "Type");
-	while (labels_map.labels_table[table_itr].label != NULL)
-	{
-
-	   label_cell = &labels_map.labels_table[table_itr];
-
-	   printf("%-10s %-10d %d\n", label_cell->label, label_cell->value, label_cell->type);
-	   table_itr++;
-	}
-
-}
 
 
 static void print_word(int word) {

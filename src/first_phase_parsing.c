@@ -329,7 +329,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 			   else {
 				   if (!(*p2 >= '0' && *p2 <= '9')) {
 					   /* issue error */
-					   print_label_map();
+					   //print_label_map();
 
 					   ERROR("Invalid source operand", p1);
 				   }
@@ -831,7 +831,9 @@ void first_phase_parsing() {
    bool is_label;
    instruction_type i_type;
 
-   memset(&labels_map, 0, sizeof(struct LABELS_MAP));
+   memset(&data_code_labels, 0, sizeof(LABELS_MAP));
+   memset(&external_labels, 0, sizeof(LABELS_MAP));
+   memset(&entry_labels, 0, sizeof(LABELS_MAP));
 
    errno = 0;
 #ifdef __CYGWIN__
@@ -894,7 +896,7 @@ void first_phase_parsing() {
          if (i_type == INST_DATA || i_type == INST_STRING) {
             if (is_label == TRUE) {
 
-               store_label(first_word, LABEL_DATA);
+               store_symbol(&data_code_labels, first_word, DC, LABEL_DATA);
             }
 
             /* TODO - need to split into two cases of DATA and STRING labels */
@@ -905,6 +907,9 @@ void first_phase_parsing() {
          }
          else if (i_type == INST_EXTERN) {
             /* perform_9();            */
+
+        	pch = strtok (NULL, " ");
+        	store_symbol(&external_labels, pch, IC, LABEL_NONE);
          }
          else {
             /* TODO - need to add error here... */
@@ -914,7 +919,7 @@ void first_phase_parsing() {
 
          if (is_label == TRUE) {
 
-            store_label(first_word, LABEL_CODE);
+            store_symbol(&data_code_labels, first_word, IC, LABEL_CODE);
          }
 
          parse_action_instruction(pch);

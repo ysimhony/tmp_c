@@ -16,10 +16,12 @@
 #include "string.h"
 #include "sys/types.h"
 #include "ctype.h"
+#include "label_map.h"
 
 #define NUM_OF_BYTES  (100)
+#define CODE_ARRAY_OFFSET  (100)
+
 typedef enum { FALSE, TRUE } bool;
-typedef enum {LABEL_NONE, LABEL_DATA, LABEL_CODE} label_type;
 typedef enum {INST_NONE, INST_DATA, INST_STRING, INST_ENTRY, INST_EXTERN} instruction_type;
 
 #define DEBUG 1
@@ -70,18 +72,9 @@ if (DEBUG==1) {\
 #define REGISTER_GET(reg, start, width) ((reg>> start) & ((1<<width)-1))
 
 
-struct LABEL
-{
-   char *label;
-   int value;
-   label_type type;
-}; // labels_table[NUM_OF_BYTES];
 
-struct LABELS_MAP
-{
-   struct LABEL labels_table[NUM_OF_BYTES];
-   int itr;
-} labels_map;
+
+
 
 /* Array holding the code sec */
 extern int code_arr[NUM_OF_BYTES];
@@ -92,14 +85,21 @@ extern int L;
 extern int data_arr[NUM_OF_BYTES];
 extern int DC;
 
+extern LABELS_MAP data_code_labels;
+extern LABELS_MAP external_labels;
+extern LABELS_MAP entry_labels;
+
 
 bool label_check(char* pch);
 bool is_instruction(char *pch);
+bool is_external_symbol(char *symbol);
 void store_label(char *label, label_type type);
 int find_label(char *label, label_type type);
 instruction_type get_instruction_type(char *pch);
 void print_code_arr();
 
 void print_label_map();
+
+
 
 #endif /* INC_COMMON_H_ */

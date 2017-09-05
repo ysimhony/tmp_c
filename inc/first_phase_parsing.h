@@ -12,7 +12,6 @@
 
 #include "common.h"
 
-
 bool is_instruction(char *pch);
 void store_label(char *label, label_type type);
 void perform_7(char *pch, instruction_type i_type);
