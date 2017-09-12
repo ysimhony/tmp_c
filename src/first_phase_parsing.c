@@ -211,6 +211,60 @@ bool is_dynamic_addressing(char *pch, int *start_bit, int *end_bit){
    return TRUE;
 }
 
+typedef enum {
+	SOURCE=0,
+	DETSTINATION,
+	OPERAND_TYPE_END
+} operand_type_t;
+typedef enum {
+	IMMEDIATE=0,
+	DIRECT,
+	DYNAMIC,
+	DIRECT_REG
+} addressing_type_t;
+
+#define SET_BIT(offset)  (1<<offset)
+int valid_operand_addressing[OPERAND_TYPE_END][1<<OPCODE_FIELD_WIDTH] = {
+		{//source operand
+				SET_BIT(IMMEDIATE) | SET_BIT(DIRECT) | SET_BIT(DYNAMIC) | SET_BIT(DIRECT_REG), /* mov */
+				SET_BIT(IMMEDIATE) | SET_BIT(DIRECT) | SET_BIT(DYNAMIC) | SET_BIT(DIRECT_REG), /* cmp */
+				SET_BIT(IMMEDIATE) | SET_BIT(DIRECT) | SET_BIT(DYNAMIC) | SET_BIT(DIRECT_REG), /* add */
+				SET_BIT(IMMEDIATE) | SET_BIT(DIRECT) | SET_BIT(DYNAMIC) | SET_BIT(DIRECT_REG), /* sub */
+				0, /* not */
+				0, /* clr */
+				SET_BIT(DIRECT), /* lea*/
+
+		},
+		{ //dest operand
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* mov */
+				SET_BIT(IMMEDIATE) | SET_BIT(DIRECT) | SET_BIT(DYNAMIC) | SET_BIT(DIRECT_REG), /* cmp */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* add */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* sub */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* not */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* clr */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* lea*/
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* inc */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* dec */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* jmp */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* bne */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* red */
+				SET_BIT(IMMEDIATE) | SET_BIT(DIRECT) | SET_BIT(DYNAMIC) | SET_BIT(DIRECT_REG), /* prn */
+				SET_BIT(DIRECT) | SET_BIT(DIRECT_REG), /* jsr */
+
+		}
+};
+
+void validate_command_addressing(int opcode, operand_type_t operand_type, int addr) {
+
+	if (!(SET_BIT(addr) & (valid_operand_addressing[operand_type][opcode]))) {
+		printf("\n"); \
+		printf("Invalid addressing\n"); \
+		printf("At file %s: %d", __FILE__, __LINE__); \
+		exit(EXIT_FAILURE); \
+
+	}
+}
+
 /*
  * pch - points to the start of the two operands
  * opcode - is the opcode value of the action sentence
@@ -239,7 +293,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
    if (*p1 == '#') {
 	   /* This branch for instant addressing */
 	   src_addr = 0;
-
+	   validate_command_addressing(opcode, SOURCE, src_addr);
 	   p1++;
 	   p2 = p1;
 	   while (*p2 != '\0') {
@@ -267,6 +321,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
    else if (*p1 == 'r') {
 	   /* direct register addressing */
 	   src_addr = 3;
+	   validate_command_addressing(opcode, SOURCE, src_addr);
 
 	   p1++;
 	   p2 = p1;
@@ -313,10 +368,12 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 	   if (*p2 == ',') {
 		   /* direct addressing */
 		   src_addr = 1;
+		   validate_command_addressing(opcode, SOURCE, src_addr);
 	   }
 	   else {
 		   /* dynamic addressing */
 		   src_addr = 2;
+		   validate_command_addressing(opcode, SOURCE, src_addr);
 
 		   p2++;
 
@@ -427,6 +484,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
    if (*p1 == '#') {
 	   /* This branch for instant addressing */
 	   dest_addr = 0;
+	   validate_command_addressing(opcode, DETSTINATION, dest_addr);
 
 	   p1++;
 	   p2 = p1;
@@ -444,6 +502,7 @@ void parse_two_operands_instruction(char *pch, int opcode) {
    else if (*p1 == 'r') {
 	   /* direct register addressing */
 	   dest_addr = 3;
+	   validate_command_addressing(opcode, DETSTINATION, dest_addr);
 
 	   p1++;
 	   p2 = p1;
@@ -475,10 +534,12 @@ void parse_two_operands_instruction(char *pch, int opcode) {
 	   if (*p2 == '\0') {
 		   /* direct addressing */
 		   dest_addr = 1;
+		   validate_command_addressing(opcode, DETSTINATION, dest_addr);
 	   }
 	   else {
 		   /* dynamic addressing */
 		   dest_addr = 2;
+		   validate_command_addressing(opcode, DETSTINATION, dest_addr);
 
 		   p2++;
 
@@ -578,6 +639,7 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 	if (*p1 == '#') {
 		/* This branch for instant addressing */
 		dest_addr = 0;
+		validate_command_addressing(opcode, DETSTINATION, dest_addr);
 
 		p1++;
 		p2 = p1;
@@ -595,6 +657,7 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 	else if (*p1 == 'r') {
 		/* direct register addressing */
 		dest_addr = 3;
+		validate_command_addressing(opcode, DETSTINATION, dest_addr);
 
 		p1++;
 		p2 = p1;
@@ -626,10 +689,12 @@ void parse_one_operand_instruction(char *pch, int opcode) {
 		if (*p2 == '\0') {
 		   /* direct addressing */
 		   dest_addr = 1;
+		   validate_command_addressing(opcode, DETSTINATION, dest_addr);
 		}
 		else {
 		   /* dynamic addressing */
-			dest_addr = 2;
+		   dest_addr = 2;
+		   validate_command_addressing(opcode, DETSTINATION, dest_addr);
 
 		   p2++;
 

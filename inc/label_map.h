@@ -37,6 +37,7 @@ typedef struct _LABELS_MAP
 } LABELS_MAP;
 
 int get_symbol_value(LABELS_MAP *label_map, char *symbol);
+label_type get_symbol_attr(LABELS_MAP *labels_map, char *symbol);
 void set_symbol_value(LABELS_MAP *label_map, char *symbol, int value);
 void store_symbol(LABELS_MAP *labels_map, char *symbol, int value, label_type attr);
 void update_labels_by_attr(LABELS_MAP *labels_map, int offset, label_type attr);

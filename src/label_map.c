@@ -46,6 +46,26 @@ int get_symbol_value(LABELS_MAP *labels_map, char *symbol) {
 
 	return result;
 }
+
+label_type get_symbol_attr(LABELS_MAP *labels_map, char *symbol) {
+	label_type result = LABEL_NONE;
+	int symbol_len = strlen(symbol);
+	LABEL *label_entry;
+
+	label_entry = labels_map->labels_table;
+
+	while (label_entry != NULL) {
+
+		if (0 == strncmp(label_entry->label, symbol, symbol_len)) {
+			result = label_entry->type;
+			break;
+		}
+		label_entry = label_entry->next;
+	}
+
+	return result;
+}
+
 void store_symbol(LABELS_MAP *labels_map, char *symbol, int value, label_type attr) {
 
 	if (-1 != get_symbol_value(labels_map, symbol)) {

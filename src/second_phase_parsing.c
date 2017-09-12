@@ -66,21 +66,87 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 				operand_val <<= ERA_FIELD_WIDTH;
 				operand_val = operand_val | REGISTER_SET(2, ERA_FIELD_OFFSET, ERA_FIELD_WIDTH);
 
-				if (-1 != get_symbol_value(&entry_labels, p1)) {
-					set_symbol_value(&entry_labels, p1, CODE_ARRAY_OFFSET+IC);
-				}
+//				// If this symbol exist in the entry label map, then we update
+//				if (-1 != get_symbol_value(&entry_labels, p1)) {
+//					set_symbol_value(&entry_labels, p1, CODE_ARRAY_OFFSET+IC);
+//				}
 			}
 		}
 		break;
-//		case 2: {
-//			if (is_external_symbol(p1)) {
-//				operand_val = 1;
-//			}
-//			else {
-//				operand_val = find_label(p1, LABEL_DATA);
-//			}
-//		}
-//		break;
+		case 2: {
+			while (*p2 != '[') {
+				p2++;
+			}
+
+			*p2 = '\0';
+
+			int operand_val = get_symbol_value(&external_labels, p1);
+
+			if (-1 != operand_val) {
+				// We found that the symbol exist in the external symbol map
+				operand_val = 1;
+
+				// update the external label map to store the reference to the external symbol
+				// in the current assembly file
+				set_symbol_value(&external_labels, p1, CODE_ARRAY_OFFSET+IC+1);
+			}
+			else {
+				operand_val = get_symbol_value(&data_code_labels, p1);
+
+				if (-1 != operand_val) {
+					// symbol exist in the data_code_array
+					label_type attr;
+					attr = get_symbol_attr(&data_code_labels, p1);
+
+					int arr_val;
+					int start_index;
+					int end_index;
+					if (LABEL_DATA == attr) {
+
+						arr_val = data_arr[operand_val];
+					}
+					else {
+						arr_val = code_arr[operand_val];
+					}
+
+					*p2 = '[';
+
+					p2++;
+					p1 = p2;
+
+
+					while (*p2 != '-') {
+						p2++;
+					}
+					*p2 = '\0';
+
+					start_index = atoi(p1);
+					*p2 = '-';
+
+					p2++;
+					p1 = p2;
+
+					while (*p2 != ']') {
+						p2++;
+					}
+					*p2 = '\0';
+
+					end_index = atoi(p1);
+					*p2 = ']';
+
+					operand_val = REGISTER_GET(arr_val, start_index, end_index);
+					operand_val <<= ERA_FIELD_WIDTH;
+					operand_val = operand_val | REGISTER_SET(0, ERA_FIELD_OFFSET, ERA_FIELD_WIDTH);
+				}
+				else {
+					// If the symbol does not exist in the data code label map, and not in th external label map
+					// then, issue an error
+				}
+
+			}
+
+		}
+		break;
 	}
 
 	code_arr[IC+1] = operand_val;
