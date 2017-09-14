@@ -67,12 +67,32 @@ if (DEBUG==1) {\
 #define  RSRVD_FIELD_OFFSET  (12)
 #define  RSRVD_FIELD_WIDTH   (3)
 
+//source register
+#define SOURCE_REGISTER_OFFSET (2)
+#define SOURCE_REGISTER_WIDTH  (6)
+
+//dest register
+#define DEST_REGISTER_OFFSET (8)
+#define DEST_REGISTER_WIDTH  (6)
+
 //opcode set/get
 #define REGISTER_SET(val, start, width) ((val & ((1<<width)-1))<<start)
 #define REGISTER_GET(reg, start, width) ((reg>> start) & ((1<<width)-1))
 
+#define SET_BIT(offset)  (1<<offset)
 
 
+typedef enum {
+	SOURCE=0,
+	DETSTINATION,
+	OPERAND_TYPE_END
+} operand_type_t;
+typedef enum {
+	IMMEDIATE=0,
+	DIRECT,
+	DYNAMIC,
+	DIRECT_REG
+} addressing_type_t;
 
 
 

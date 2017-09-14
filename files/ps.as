@@ -9,6 +9,8 @@ prn #-5
 sub r1, r4
 inc K
 mov LOOP[1-13],r3
+prn LOOP[1-13]
+prn r13
 bne L3
 END: stop
 STR: .string "abcdef"

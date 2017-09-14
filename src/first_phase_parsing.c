@@ -211,19 +211,7 @@ bool is_dynamic_addressing(char *pch, int *start_bit, int *end_bit){
    return TRUE;
 }
 
-typedef enum {
-	SOURCE=0,
-	DETSTINATION,
-	OPERAND_TYPE_END
-} operand_type_t;
-typedef enum {
-	IMMEDIATE=0,
-	DIRECT,
-	DYNAMIC,
-	DIRECT_REG
-} addressing_type_t;
 
-#define SET_BIT(offset)  (1<<offset)
 int valid_operand_addressing[OPERAND_TYPE_END][1<<OPCODE_FIELD_WIDTH] = {
 		{//source operand
 				SET_BIT(IMMEDIATE) | SET_BIT(DIRECT) | SET_BIT(DYNAMIC) | SET_BIT(DIRECT_REG), /* mov */

@@ -29,6 +29,7 @@ static void parse_two_operands_instruction(char *pch, int opcode) {
 	   L = 3;
 	}
 
+
 	IC += L;
 
 	PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
@@ -51,7 +52,7 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 		break;
 
 		case 1: {
-			int operand_val = get_symbol_value(&external_labels, p1);
+			operand_val = get_symbol_value(&external_labels, p1);
 
 			if (-1 != operand_val) {
 				// We found that the symbol exist in the external symbol map
@@ -80,7 +81,7 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 
 			*p2 = '\0';
 
-			int operand_val = get_symbol_value(&external_labels, p1);
+			operand_val = get_symbol_value(&external_labels, p1);
 
 			if (-1 != operand_val) {
 				// We found that the symbol exist in the external symbol map
@@ -94,13 +95,15 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 				operand_val = get_symbol_value(&data_code_labels, p1);
 
 				if (-1 != operand_val) {
-					// symbol exist in the data_code_array
+					// symbol exists in the data_code_array
 					label_type attr;
 					attr = get_symbol_attr(&data_code_labels, p1);
 
 					int arr_val;
 					int start_index;
 					int end_index;
+
+					// find out whether it's a data array  or code array
 					if (LABEL_DATA == attr) {
 
 						arr_val = data_arr[operand_val];
@@ -109,6 +112,7 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 						arr_val = code_arr[operand_val];
 					}
 
+					// find the start and end indices
 					*p2 = '[';
 
 					p2++;
@@ -135,7 +139,7 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 					*p2 = ']';
 
 					operand_val = REGISTER_GET(arr_val, start_index, end_index);
-					operand_val <<= ERA_FIELD_WIDTH;
+					operand_val = operand_val << ERA_FIELD_WIDTH;
 					operand_val = operand_val | REGISTER_SET(0, ERA_FIELD_OFFSET, ERA_FIELD_WIDTH);
 				}
 				else {
@@ -144,9 +148,20 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 				}
 
 			}
-
 		}
 		break;
+		case 3: {
+			while (!((*p1 >= '0') && (*p1 <= '9'))) {
+				p1++;
+			}
+
+			operand_val = atoi(p1);
+
+			operand_val = REGISTER_SET(operand_val, DEST_REGISTER_OFFSET, DEST_REGISTER_WIDTH);
+		}
+		break;
+		default:
+			break;
 	}
 
 	code_arr[IC+1] = operand_val;
