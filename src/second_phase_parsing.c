@@ -13,45 +13,57 @@ static void parse_non_operand_instruction(char *pch, int opcode);
 
 
 
-static void parse_two_operands_instruction(char *pch, int opcode) {
-
-	int dest_addr;
-	int src_addr;
-
-	dest_addr = REGISTER_GET(code_arr[IC], DST_ADDR_FIELD_OFFSET, DST_ADDR_FIELD_WIDTH);
-	src_addr = REGISTER_GET(code_arr[IC], SRC_ADDR_FIELD_OFFSET, SRC_ADDR_FIELD_WIDTH);
-
-
-	if (3 == src_addr && 3 == dest_addr) {
-	   L = 2;
-	}
-	else {
-	   L = 3;
-	}
-
-
-	IC += L;
-
-	PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
-
-
-}
-
-static void parse_one_operand_instruction(char *pch, int opcode) {
+static char *parse_operand(char *pch, operand_type_t operand_type, bool two_operands) {
 	char *p1;
 	char *p2;
 	int operand_val;
+	addressing_type_t addressing_type;
+	int operand_offset = 0;
 
 	p1 = p2 = pch;
 
-	switch (REGISTER_GET(code_arr[IC], DST_ADDR_FIELD_OFFSET, DST_ADDR_FIELD_WIDTH)) {
-		case 0: {
+
+	if (SOURCE == operand_type) {
+		addressing_type = REGISTER_GET(code_arr[IC], SRC_ADDR_FIELD_OFFSET, SRC_ADDR_FIELD_WIDTH);
+
+		operand_offset = 1;
+
+//		if (p2 == NULL) {
+//			fflush(stdout);
+//		}
+		// find the comma which the delimeter between source and destination operands
+		while (*p2 != ',') {
+			p2++;
+		}
+
+		*p2 = '\0';
+	}
+	else {
+		addressing_type = REGISTER_GET(code_arr[IC], DST_ADDR_FIELD_OFFSET, DST_ADDR_FIELD_WIDTH);
+
+		if (TRUE == two_operands) {
+			operand_offset = 2;
+
+			if (DIRECT_REG == addressing_type) {
+				if (DIRECT_REG == REGISTER_GET(code_arr[IC], SRC_ADDR_FIELD_OFFSET, SRC_ADDR_FIELD_WIDTH)) {
+					operand_offset = 1;
+				}
+			}
+		}
+		else {
+			operand_offset = 1;
+		}
+
+	}
+
+	switch (addressing_type) {
+		case IMMEDIATE: {
 			p1++;
 			operand_val = atoi(p1);
 		}
 		break;
 
-		case 1: {
+		case DIRECT: {
 			operand_val = get_symbol_value(&external_labels, p1);
 
 			if (-1 != operand_val) {
@@ -74,7 +86,8 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 			}
 		}
 		break;
-		case 2: {
+		case DYNAMIC: {
+			p2 = p1;
 			while (*p2 != '[') {
 				p2++;
 			}
@@ -138,9 +151,14 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 					end_index = atoi(p1);
 					*p2 = ']';
 
-					operand_val = REGISTER_GET(arr_val, start_index, end_index);
+					int field_width = end_index - start_index + 1;
+					int sign_externsion = REGISTER_SET(0xFFFF, (ERA_FIELD_WIDTH+field_width), (15-ERA_FIELD_WIDTH-field_width));
+
+					operand_val = REGISTER_GET(arr_val, start_index, field_width);
 					operand_val = operand_val << ERA_FIELD_WIDTH;
 					operand_val = operand_val | REGISTER_SET(0, ERA_FIELD_OFFSET, ERA_FIELD_WIDTH);
+					operand_val = operand_val | ((operand_val & (1 << (field_width-1)))?sign_externsion:0);
+
 				}
 				else {
 					// If the symbol does not exist in the data code label map, and not in th external label map
@@ -150,7 +168,7 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 			}
 		}
 		break;
-		case 3: {
+		case DIRECT_REG: {
 			while (!((*p1 >= '0') && (*p1 <= '9'))) {
 				p1++;
 			}
@@ -164,9 +182,55 @@ static void parse_one_operand_instruction(char *pch, int opcode) {
 			break;
 	}
 
-	code_arr[IC+1] = operand_val;
-	L = 2;
+	code_arr[IC+operand_offset] = operand_val;
+//	L = 2;
+//	IC += L;
+
+	p2++;
+
+	while (*p2 == ' ') {
+		p2++;
+	}
+
+	return p2;
+}
+
+static void parse_two_operands_instruction(char *pch, int opcode) {
+
+	int dest_addr;
+	int src_addr;
+
+	dest_addr = REGISTER_GET(code_arr[IC], DST_ADDR_FIELD_OFFSET, DST_ADDR_FIELD_WIDTH);
+	src_addr = REGISTER_GET(code_arr[IC], SRC_ADDR_FIELD_OFFSET, SRC_ADDR_FIELD_WIDTH);
+
+
+	if (3 == src_addr && 3 == dest_addr) {
+	   L = 2;
+	}
+	else {
+	   L = 3;
+	}
+
+	pch = parse_operand(pch, SOURCE, TRUE);
+	parse_operand(pch, DETSTINATION, TRUE);
+
+
 	IC += L;
+
+	PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
+
+
+}
+static void parse_one_operand_instruction(char *pch, int opcode) {
+
+	L = 2;
+
+	parse_operand(pch, DETSTINATION, FALSE);
+
+	IC += L;
+
+	PRINT_DEBUG ("updating IC to be %d where L is %d", IC, L);
+
 }
 
 static void parse_non_operand_instruction(char *pch, int opcode) {
@@ -237,7 +301,7 @@ void second_phase_parsing() {
 	   exit(EXIT_FAILURE);
 	}
 
-	update_labels_by_attr(&data_code_labels, IC, LABEL_DATA);
+	//update_labels_by_attr(&data_code_labels, CODE_ARRAY_OFFSET+IC, LABEL_DATA);
 
 	IC = 0;
 	DC = 0;
