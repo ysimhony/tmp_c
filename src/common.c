@@ -20,7 +20,7 @@ LABELS_MAP data_code_labels;
 LABELS_MAP external_labels;
 LABELS_MAP entry_labels;
 
-static void print_word(int word);
+static void print_word(int word, char *str);
 
 
 /* This function return TRUE if the string is LABEL. Otherwise, FALSE */
@@ -103,7 +103,7 @@ instruction_type get_instruction_type(char *pch){
 
 
 
-static void print_word(int word) {
+static void print_word(int word, char *str) {
 	int bit_index;
 	char tmp_str[30];
 	int str_itr;
@@ -131,6 +131,7 @@ static void print_word(int word) {
 	}
 
 	printf("%s\n", tmp_str);
+	sprintf(str, "%s\n", tmp_str);
 }
 
 void print_code_arr() {
@@ -138,11 +139,35 @@ void print_code_arr() {
 
 	/* Array holding the code sec */
 	int ic;
+	char str[80];
 
 	for (ic=0;ic<IC;ic++) {
 		printf("%-3d: ", ic);
-		print_word(code_arr[ic]);
+		print_word(code_arr[ic], &str[0]);
 	}
 
 }
 
+void write_arr_to_file(const char *filename) {
+	FILE *fp;
+
+	fp = fopen("C:\\Users\\yacov\\Documents\\GitHub\\tmp_c\\files\\test.txt", "w");
+
+	if (NULL == fp) {
+		printf ("  err %d \n", errno);
+		return;
+	}
+
+	/* Array holding the code sec */
+	int ic;
+	char str[80];
+
+	for (ic=0;ic<IC;ic++) {
+		printf("%-3d: ", ic);
+		print_word(code_arr[ic], &str[0]);
+		fprintf(fp, "%s", str);
+	}
+
+	fprintf(fp, "Testing...\n");
+	fclose(fp);
+}

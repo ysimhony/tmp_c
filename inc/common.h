@@ -119,7 +119,7 @@ instruction_type get_instruction_type(char *pch);
 void print_code_arr();
 
 void print_label_map();
-
+void write_arr_to_file(const char *filename);
 
 
 #endif /* INC_COMMON_H_ */

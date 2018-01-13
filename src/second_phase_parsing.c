@@ -7,6 +7,7 @@
 
 #include "second_phase_parsing.h"
 
+static int size_of_code_arr = 0;
 static void parse_two_operands_instruction(char *pch, int opcode);
 static void parse_one_operand_instruction(char *pch, int opcode);
 static void parse_non_operand_instruction(char *pch, int opcode);
@@ -32,11 +33,11 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 //			fflush(stdout);
 //		}
 		// find the comma which the delimeter between source and destination operands
-		while (*p2 != ',') {
-			p2++;
-		}
-
-		*p2 = '\0';
+//		while (*p2 != ',') {
+//			p2++;
+//		}
+//
+//		*p2 = '\0';
 	}
 	else {
 		addressing_type = REGISTER_GET(code_arr[IC], DST_ADDR_FIELD_OFFSET, DST_ADDR_FIELD_WIDTH);
@@ -60,6 +61,8 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 		case IMMEDIATE: {
 			p1++;
 			operand_val = atoi(p1);
+			operand_val <<= ERA_FIELD_WIDTH;
+			operand_val = operand_val | REGISTER_SET(0, ERA_FIELD_OFFSET, ERA_FIELD_WIDTH);
 		}
 		break;
 
@@ -76,6 +79,7 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 			}
 			else {
 				operand_val = get_symbol_value(&data_code_labels, p1);
+				operand_val += CODE_ARRAY_OFFSET + size_of_code_arr;
 				operand_val <<= ERA_FIELD_WIDTH;
 				operand_val = operand_val | REGISTER_SET(2, ERA_FIELD_OFFSET, ERA_FIELD_WIDTH);
 
@@ -87,12 +91,14 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 		}
 		break;
 		case DYNAMIC: {
-			p2 = p1;
-			while (*p2 != '[') {
-				p2++;
+			char *p3;
+
+			p3 = p1;
+			while (*p3 != '[') {
+				p3++;
 			}
 
-			*p2 = '\0';
+			*p3 = '\0';
 
 			operand_val = get_symbol_value(&external_labels, p1);
 
@@ -126,30 +132,30 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 					}
 
 					// find the start and end indices
-					*p2 = '[';
+					*p3 = '[';
 
-					p2++;
-					p1 = p2;
+					p3++;
+					p1 = p3;
 
 
-					while (*p2 != '-') {
-						p2++;
+					while (*p3 != '-') {
+						p3++;
 					}
-					*p2 = '\0';
+					*p3 = '\0';
 
 					start_index = atoi(p1);
-					*p2 = '-';
+					*p3 = '-';
 
-					p2++;
-					p1 = p2;
+					p3++;
+					p1 = p3;
 
-					while (*p2 != ']') {
-						p2++;
+					while (*p3 != ']') {
+						p3++;
 					}
-					*p2 = '\0';
+					*p3 = '\0';
 
 					end_index = atoi(p1);
-					*p2 = ']';
+					*p3 = ']';
 
 					int field_width = end_index - start_index + 1;
 					int sign_externsion = REGISTER_SET(0xFFFF, (ERA_FIELD_WIDTH+field_width), (15-ERA_FIELD_WIDTH-field_width));
@@ -186,13 +192,21 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 //	L = 2;
 //	IC += L;
 
-	p2++;
+//	p2++;
+//
+//	while (*p2 == ' ') {
+//		p2++;
+//	}
 
-	while (*p2 == ' ') {
-		p2++;
+
+	if (SOURCE == operand_type) {
+		pch = strtok(NULL, ",");
+
+		if (pch == NULL || pch == '\0') {
+			ERROR("Could not find start of the destination opernads in two operands", pch);
+		}
 	}
-
-	return p2;
+	return pch;
 }
 
 static void parse_two_operands_instruction(char *pch, int opcode) {
@@ -211,6 +225,7 @@ static void parse_two_operands_instruction(char *pch, int opcode) {
 	   L = 3;
 	}
 
+	//pch = strtok(pch, ",");
 	pch = parse_operand(pch, SOURCE, TRUE);
 	parse_operand(pch, DETSTINATION, TRUE);
 
@@ -249,7 +264,7 @@ static void parse_action_instruction(char *pch){
 
    itr = 0;
 
-   pch = strtok(NULL, " ");
+   pch = strtok(NULL, ",");
 
    int opcode = REGISTER_GET(code_arr[IC], 6, 4);
    switch (opcode) {
@@ -302,6 +317,9 @@ void second_phase_parsing() {
 	}
 
 	//update_labels_by_attr(&data_code_labels, CODE_ARRAY_OFFSET+IC, LABEL_DATA);
+
+	// Store the size of the code array, in order to know what is the offset for the data array
+	size_of_code_arr = IC;
 
 	IC = 0;
 	DC = 0;
@@ -361,4 +379,5 @@ void second_phase_parsing() {
 	if (line)
 	  free(line);
 
+	write_arr_to_file("yacov");
 }
