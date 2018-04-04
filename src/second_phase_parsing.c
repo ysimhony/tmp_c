@@ -20,6 +20,7 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 	int operand_val;
 	addressing_type_t addressing_type;
 	int operand_offset = 0;
+	bool two_operands_registers = FALSE;
 
 	p1 = p2 = pch;
 
@@ -48,6 +49,8 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 			if (DIRECT_REG == addressing_type) {
 				if (DIRECT_REG == REGISTER_GET(code_arr[IC], SRC_ADDR_FIELD_OFFSET, SRC_ADDR_FIELD_WIDTH)) {
 					operand_offset = 1;
+					two_operands_registers = TRUE;
+
 				}
 			}
 		}
@@ -181,7 +184,19 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 
 			operand_val = atoi(p1);
 
-			operand_val = REGISTER_SET(operand_val, DEST_REGISTER_OFFSET, DEST_REGISTER_WIDTH);
+			if (SOURCE == operand_type) {
+				operand_val = REGISTER_SET(operand_val, SOURCE_REGISTER_OFFSET, SOURCE_REGISTER_WIDTH);
+			}
+			else {
+				operand_val = REGISTER_SET(operand_val, DEST_REGISTER_OFFSET, DEST_REGISTER_WIDTH);
+
+				if (TRUE == two_operands_registers) {
+					// two_operands_registers means the this is the second registers of two
+					// operads command, therefore the two registers are encoded in the same word
+					operand_val |= code_arr[IC+operand_offset];
+				}
+			}
+
 		}
 		break;
 		default:
@@ -189,6 +204,7 @@ static char *parse_operand(char *pch, operand_type_t operand_type, bool two_oper
 	}
 
 	code_arr[IC+operand_offset] = operand_val;
+
 //	L = 2;
 //	IC += L;
 
@@ -334,7 +350,7 @@ void second_phase_parsing() {
 		 continue;
 
 	  /* TODO - need to skip empty lines */
-	  PRINT_DEBUG("parsing line: %s\n", line);
+	  PRINT_DEBUG("parsing line: %s", line);
 
 	  /* Get first word */
 	  pch = strtok(line, " ");

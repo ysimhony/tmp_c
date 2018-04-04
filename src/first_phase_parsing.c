@@ -918,7 +918,7 @@ void first_phase_parsing() {
 
       /* TODO - need to skip empty lines */
 
-      PRINT_DEBUG("parsing line: %s\n", line);
+      PRINT_DEBUG("parsing line: %s", line);
       is_label = FALSE;
 
       /* Get first word */

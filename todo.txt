@@ -1,7 +1,16 @@
 1. understand what is A, R, E... - DONE
 2. Add makefile - DONE
 3. get the copy of the assembly code - DONE
-4. write the method converting assembler commands into opcodes
-5. Write function that reads a file
-6. implement the first phase
+4. write the method converting assembler commands into opcodes - DONE
+5. Write function that reads a file - DONE
+6. implement the first phase - DONE
+7. write compare function between expected and actual result
+8. write test dir with many tests
+9. write function to covent decimal to special base
+10. fix all TODO
+11. print the address when printing the code array (dependes on start address) - DONE
+12. improve error message handling - use the va_list like in AHB
+ 
 
+
+Notes:

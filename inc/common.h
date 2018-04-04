@@ -21,9 +21,6 @@
 #define NUM_OF_BYTES  (100)
 #define CODE_ARRAY_OFFSET  (100)
 
-typedef enum { FALSE, TRUE } bool;
-typedef enum {INST_NONE, INST_DATA, INST_STRING, INST_ENTRY, INST_EXTERN} instruction_type;
-
 #define DEBUG 1
 
 #define ERROR(msg, cmd_ptr) \
@@ -68,11 +65,11 @@ if (DEBUG==1) {\
 #define  RSRVD_FIELD_WIDTH   (3)
 
 //source register
-#define SOURCE_REGISTER_OFFSET (2)
+#define SOURCE_REGISTER_OFFSET (8)
 #define SOURCE_REGISTER_WIDTH  (6)
 
 //dest register
-#define DEST_REGISTER_OFFSET (8)
+#define DEST_REGISTER_OFFSET (2)
 #define DEST_REGISTER_WIDTH  (6)
 
 //opcode set/get
@@ -80,6 +77,9 @@ if (DEBUG==1) {\
 #define REGISTER_GET(reg, start, width) ((reg>> start) & ((1<<width)-1))
 
 #define SET_BIT(offset)  (1<<offset)
+
+typedef enum { FALSE, TRUE } bool;
+typedef enum {INST_NONE, INST_DATA, INST_STRING, INST_ENTRY, INST_EXTERN} instruction_type;
 
 
 typedef enum {
@@ -120,6 +120,6 @@ void print_code_arr();
 
 void print_label_map();
 void write_arr_to_file(const char *filename);
-
+void check_result();
 
 #endif /* INC_COMMON_H_ */

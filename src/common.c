@@ -142,7 +142,7 @@ void print_code_arr() {
 	char str[80];
 
 	for (ic=0;ic<IC;ic++) {
-		printf("%-3d: ", ic);
+		printf("%-3d: ", CODE_ARRAY_OFFSET+ic);
 		print_word(code_arr[ic], &str[0]);
 	}
 
@@ -151,7 +151,7 @@ void print_code_arr() {
 void write_arr_to_file(const char *filename) {
 	FILE *fp;
 
-	fp = fopen("C:\\Users\\yacov\\Documents\\GitHub\\tmp_c\\files\\test.txt", "w");
+	fp = fopen("C:\\Users\\yacov\\Documents\\GitHub\\tmp_c\\output\\test.txt", "w");
 
 	if (NULL == fp) {
 		printf ("  err %d \n", errno);
@@ -170,4 +170,95 @@ void write_arr_to_file(const char *filename) {
 
 	fprintf(fp, "Testing...\n");
 	fclose(fp);
+}
+
+void check_result() {
+
+	FILE *res_fp, *exp_fp;
+	char * res_line = NULL, *exp_line = NULL;
+	size_t res_len = 0, exp_len = 0;
+	ssize_t res_read, exp_read;
+	char *res_pch, *exp_pch;
+	int line_idx, bit_idx;
+
+	res_fp = fopen(
+			"C:\\Users\\yacov\\Documents\\GitHub\\tmp_c\\output\\test.txt",
+			"r");
+
+	if (NULL == res_fp) {
+		printf("  err %d \n", errno);
+		return;
+	}
+
+	exp_fp = fopen(
+			"C:\\Users\\yacov\\Documents\\GitHub\\tmp_c\\files\\ps.ob.ref",
+			"r");
+
+	if (NULL == exp_fp) {
+		printf("  err %d \n", errno);
+		return;
+	}
+
+	line_idx = 0;
+
+//	exp_line = (char *)malloc(exp_len * sizeof(char));
+//    if( exp_line == NULL)
+//    {
+//        perror("Unable to allocate buffer");
+//        exit(1);
+//    }
+//
+//    res_line = (char *)malloc(res_len * sizeof(char));
+//    if( res_line == NULL)
+//    {
+//        perror("Unable to allocate buffer");
+//        exit(1);
+//    }
+
+	while ((res_read = getline(&res_line, &res_len, res_fp)) != -1) {
+
+		if ((exp_read = getline(&exp_line, &exp_len, exp_fp)) == -1) {
+			/* TODO - ERROR("Invalid command", pch); */
+			printf("check_result error: too many lines in result file\n");
+			printf("check_result error: line_idx %u\n", line_idx);
+			exit(1);
+		}
+
+		/* Remove the trailing CR/LF */
+		res_line[strcspn(res_line, "\r\n")] = 0;
+
+		/* Remove the trailing CR/LF */
+		exp_line[strcspn(exp_line, "\r\n")] = 0;
+
+		res_pch = res_line;
+		exp_pch = exp_line;
+
+		bit_idx = 0;
+		while (*res_pch) {
+			if (*res_pch == '1' || *res_pch == '0') {
+				if (*res_pch != *exp_pch) {
+					printf("check_result error: mismatch in bits\n");
+					printf("check_result error: exp_line %s\n", exp_line);
+					printf("check_result error: res_line %s\n", res_line);
+					printf("check_result error: mismatch in bit %u\n", bit_idx);
+					printf("check_result error: res_pch %c, exp_pch %c\n", *res_pch, *exp_pch);
+					printf("check_result error: line_idx %u\n", line_idx);
+					exit(1);
+				}
+
+				exp_pch++;
+				bit_idx++;
+			}
+
+			res_pch++;
+		}
+
+		if (*exp_pch != '\0') {
+			printf("check_result error: few char in result line %u\n", line_idx);
+			exit(1);
+		}
+
+		line_idx++;
+	}
+
 }

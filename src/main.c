@@ -14,5 +14,6 @@ int main() {
    print_label_map(&data_code_labels);
    print_code_arr();
 
+   check_result();
    return 0;
 }

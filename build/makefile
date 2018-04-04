@@ -3,6 +3,7 @@ INCDIR = ../inc
 SRCDIR = ../src
 OBJDIR = ../obj
 LIBDIR = ../lib
+OUTDIR = ../output
 
 CC=gcc
 CFLAGS=-I$(INCDIR) -g -Wall -std=c99 -pedantic
@@ -29,7 +30,7 @@ $(BINDIR)/assembler: $(OBJECTS)
 .PHONY: clean
 
 clean:
-	rm -f $(OBJDIR)/* $(BINDIR)/* core $(INCDIR)/*~ 
+	rm -f $(OBJDIR)/* $(BINDIR)/* core $(INCDIR)/*~ $(OUTDIR)/*
 
 all: $(BINDIR)/assembler
 
