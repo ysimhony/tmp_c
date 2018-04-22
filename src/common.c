@@ -16,9 +16,13 @@ int L = 0;
 int data_arr[NUM_OF_BYTES] = {0};
 int DC = 0;
 
+
 LABELS_MAP data_code_labels;
 LABELS_MAP external_labels;
 LABELS_MAP entry_labels;
+
+static const char *special_base = "!@#$%^&*";
+
 
 static void print_word(int word, char *str);
 
@@ -134,6 +138,24 @@ static void print_word(int word, char *str) {
 	sprintf(str, "%s\n", tmp_str);
 }
 
+
+static void print_word_special_base(uint word, char *str) {
+	int bit_index;
+	int str_itr;
+
+	//memset(&str, 0, sizeof(str));
+
+	for (bit_index=12, str_itr=0;bit_index>=0;bit_index-=3) {
+
+		str[str_itr++] = special_base[(word>>bit_index) & 0x7];
+
+	}
+
+	str[str_itr] = '\0';
+
+	//printf("%s\n", str);
+}
+
 void print_code_arr() {
 
 
@@ -148,8 +170,11 @@ void print_code_arr() {
 
 }
 
-void write_arr_to_file(const char *filename) {
+void write_arr_to_file(const char *filename, bool decimal_format) {
 	FILE *fp;
+	/* Array holding the code sec */
+	int ic, dc;
+	char str[80];
 
 	fp = fopen("C:\\Users\\yacov\\Documents\\GitHub\\tmp_c\\output\\test.txt", "w");
 
@@ -158,21 +183,42 @@ void write_arr_to_file(const char *filename) {
 		return;
 	}
 
-	/* Array holding the code sec */
-	int ic;
-	char str[80];
-
 	for (ic=0;ic<IC;ic++) {
-		printf("%-3d: ", ic);
-		print_word(code_arr[ic], &str[0]);
-		fprintf(fp, "%s", str);
+
+		if (TRUE == decimal_format) {
+			printf("%-3d: ", ic);
+			print_word(code_arr[ic], &str[0]);
+		}
+		else {
+			print_word_special_base((CODE_ARRAY_OFFSET+ic), str);
+			sprintf(str, "%s :", str);
+			str[strlen(str)] = ' ';
+			print_word_special_base(code_arr[ic], str+8);
+		}
+		fprintf(fp, "%s\n", str);
 	}
 
-	fprintf(fp, "Testing...\n");
+	/* Array holding the data sec */
+	for (dc=0;dc<DC;dc++) {
+
+		if (TRUE == decimal_format) {
+			printf("%-3d: ", dc);
+			print_word(data_arr[dc], &str[0]);
+		}
+		else {
+			print_word_special_base(CODE_ARRAY_OFFSET+IC+dc, str);
+			sprintf(str, "%s :", str);
+			str[strlen(str)] = ' ';
+			print_word_special_base(data_arr[dc], str+8);
+		}
+		fprintf(fp, "%s\n", str);
+	}
+
+	//fprintf(fp, "Testing...\n");
 	fclose(fp);
 }
 
-void check_result() {
+void check_result(bool decimal_format) {
 
 	FILE *res_fp, *exp_fp;
 	char * res_line = NULL, *exp_line = NULL;
@@ -235,7 +281,7 @@ void check_result() {
 
 		bit_idx = 0;
 		while (*res_pch) {
-			if (*res_pch == '1' || *res_pch == '0') {
+			if (FALSE == decimal_format || *res_pch == '1' || *res_pch == '0') {
 				if (*res_pch != *exp_pch) {
 					printf("check_result error: mismatch in bits\n");
 					printf("check_result error: exp_line %s\n", exp_line);

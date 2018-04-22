@@ -4,7 +4,7 @@
 4. write the method converting assembler commands into opcodes - DONE
 5. Write function that reads a file - DONE
 6. implement the first phase - DONE
-7. write compare function between expected and actual result
+7. write compare function between expected and actual result - DONE
 8. write test dir with many tests
 9. write function to covent decimal to special base
 10. fix all TODO

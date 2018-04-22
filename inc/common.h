@@ -95,7 +95,6 @@ typedef enum {
 } addressing_type_t;
 
 
-
 /* Array holding the code sec */
 extern int code_arr[NUM_OF_BYTES];
 extern int IC;
@@ -119,7 +118,7 @@ instruction_type get_instruction_type(char *pch);
 void print_code_arr();
 
 void print_label_map();
-void write_arr_to_file(const char *filename);
-void check_result();
+void write_arr_to_file(const char *filename, bool decimal_format);
+void check_result(bool decimal_format);
 
 #endif /* INC_COMMON_H_ */

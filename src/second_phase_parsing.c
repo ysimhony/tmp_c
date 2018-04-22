@@ -332,17 +332,18 @@ void second_phase_parsing() {
 	   exit(EXIT_FAILURE);
 	}
 
+	printf("Starting second phase parsing...\n\n");
+
 	//update_labels_by_attr(&data_code_labels, CODE_ARRAY_OFFSET+IC, LABEL_DATA);
 
 	// Store the size of the code array, in order to know what is the offset for the data array
 	size_of_code_arr = IC;
 
 	IC = 0;
-	DC = 0;
 
 	/* Read line */
 	while ((read = getline(&line, &len, fp)) != -1) {
-	  /* Remove the traing CR/LF */
+	  /* Remove the trailing CR/LF */
 	  line[strcspn(line, "\r\n")] = 0;
 
 	  /* Skip comment line or empty line */
@@ -395,5 +396,6 @@ void second_phase_parsing() {
 	if (line)
 	  free(line);
 
-	write_arr_to_file("yacov");
+   printf("Finished second phase parsing!!!\n\n");
+
 }

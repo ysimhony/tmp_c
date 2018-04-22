@@ -899,6 +899,7 @@ void first_phase_parsing() {
 	   exit(EXIT_FAILURE);
    }
 
+   printf("Starting first phase parsing...\n\n");
 
    IC = 0;
    DC = 0;
@@ -986,6 +987,8 @@ void first_phase_parsing() {
    fclose(fp);
    if (line)
       free(line);
+
+   printf("Finished first phase parsing!!!\n\n");
 
    //exit(EXIT_SUCCESS);
 
