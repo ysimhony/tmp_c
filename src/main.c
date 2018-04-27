@@ -1,7 +1,7 @@
 
 #include "first_phase_parsing.h"
 #include "second_phase_parsing.h"
-
+#include "create_files.h"
 
 
 int main() {
@@ -18,7 +18,7 @@ int main() {
 	print_code_arr();
 #endif
 
-	write_arr_to_file("yacov", FALSE);
+	create_files();
 
 	check_result(FALSE);
 	return 0;

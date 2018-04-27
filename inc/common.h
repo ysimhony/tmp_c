@@ -120,5 +120,7 @@ void print_code_arr();
 void print_label_map();
 void write_arr_to_file(const char *filename, bool decimal_format);
 void check_result(bool decimal_format);
+void print_word(int word, char *str);
+void print_word_special_base(uint word, char *str);
 
 #endif /* INC_COMMON_H_ */
