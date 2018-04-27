@@ -7,11 +7,16 @@
 int main() {
 
 	first_phase_parsing();
+#if DEBUG
 	print_label_map(&data_code_labels);
 	print_code_arr();
+#endif
+
 	second_phase_parsing();
+#if DEBUG
 	print_label_map(&data_code_labels);
 	print_code_arr();
+#endif
 
 	write_arr_to_file("yacov", FALSE);
 
