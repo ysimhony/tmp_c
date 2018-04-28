@@ -377,6 +377,8 @@ void second_phase_parsing() {
 		 if (i_type == INST_DATA || i_type == INST_STRING) {
 		 }
 		 else if (i_type == INST_ENTRY) {
+			 pch = strtok (NULL, " ");
+			 mark_symbol_as_entry(&data_code_labels, pch);
 		 }
 		 else if (i_type == INST_EXTERN) {
 		 }

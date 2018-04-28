@@ -7,7 +7,8 @@
 
 #include "create_files.h"
 
-static void write_ob_file();
+static void write_ob_file(bool decimal_format);
+static void write_ent_file();
 
 
 static void write_ob_file(bool decimal_format) {
@@ -57,7 +58,43 @@ static void write_ob_file(bool decimal_format) {
 	fclose(fp);
 }
 
+static void write_ent_file() {
+	FILE *fp;
+	/* Array holding the code sec */
+	char *label;
+	uint value;
+	label_type type;
+	char str[80];
+
+	fp = fopen("C:\\Users\\yacov\\Documents\\GitHub\\tmp_c\\output\\ps.ent",
+			"w");
+
+	if (NULL == fp) {
+		printf("  err %d \n", errno);
+		return;
+	}
+
+	get_next_label_as_entry_reset(&data_code_labels);
+
+	while ((label = get_next_label_as_entry(&data_code_labels, &value, &type)) != NULL) {
+
+		sprintf(str, "%-10s", label);
+
+		value += CODE_ARRAY_OFFSET;
+
+		if (type == LABEL_DATA) {
+			value += IC;
+		}
+
+		print_word_special_base(value, str + strlen(str));
+		fprintf(fp, "%s\n", str);
+	}
+
+	fclose(fp);
+}
+
+
 void create_files() {
 	write_ob_file(FALSE);
-
+	write_ent_file();
 }

@@ -10,7 +10,8 @@
 10. fix all TODO
 11. print the address when printing the code array (dependes on start address) - DONE
 12. improve error message handling - use the va_list like in AHB
- 
+13. implement the write of the ent file 
+14. implement the write of the ext file 
 
 
 Notes:

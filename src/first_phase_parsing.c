@@ -929,6 +929,7 @@ void first_phase_parsing() {
       /* Mark label flag */
       if (TRUE == label_check(pch)) {
          is_label = TRUE;
+         first_word[strlen(first_word)-1] = '\0';
       }
 
       if (is_label) {

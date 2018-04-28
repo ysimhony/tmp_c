@@ -78,7 +78,6 @@ if (DEBUG==1) {\
 
 #define SET_BIT(offset)  (1<<offset)
 
-typedef enum { FALSE, TRUE } bool;
 typedef enum {INST_NONE, INST_DATA, INST_STRING, INST_ENTRY, INST_EXTERN} instruction_type;
 
 
